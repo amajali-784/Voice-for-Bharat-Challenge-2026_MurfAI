@@ -12,6 +12,8 @@ Forked from the original [Murf LiveKit Starter](https://github.com/murf-ai/murf-
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Murf Falcon](https://img.shields.io/badge/TTS-Murf%20Falcon-6366F1)](https://murf.ai/api/docs/text-to-speech/streaming) [![LiveKit](https://img.shields.io/badge/Transport-LiveKit-002cf2)](https://docs.livekit.io) [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/) [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 
+<img width="2880" height="1544" alt="image" src="https://github.com/user-attachments/assets/a7b13601-cfea-43af-9fd8-eb73454614bd" />
+
 ---
 
 ## What this agent does
