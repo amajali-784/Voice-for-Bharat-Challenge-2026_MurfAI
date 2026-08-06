@@ -1,4 +1,4 @@
-import { Public_Sans } from 'next/font/google';
+import { Mukta, Public_Sans } from 'next/font/google';
 import localFont from 'next/font/local';
 import { headers } from 'next/headers';
 import { ThemeProvider } from '@/components/app/theme-provider';
@@ -10,6 +10,12 @@ import '@/styles/globals.css';
 const publicSans = Public_Sans({
   variable: '--font-public-sans',
   subsets: ['latin'],
+});
+
+const mukta = Mukta({
+  variable: '--font-mukta',
+  subsets: ['latin', 'devanagari'],
+  weight: ['400', '600', '700'],
 });
 
 const commitMono = localFont({
@@ -47,14 +53,15 @@ export default async function RootLayout({ children }: RootLayoutProps) {
   const hdrs = await headers();
   const appConfig = await getAppConfig(hdrs);
   const styles = getStyles(appConfig);
-  const { pageTitle, pageDescription, companyName, logo, logoDark } = appConfig;
+  const { pageTitle, pageDescription } = appConfig;
 
   return (
     <html
-      lang="en"
+      lang="hi"
       suppressHydrationWarning
       className={cn(
         publicSans.variable,
+        mukta.variable,
         commitMono.variable,
         'scroll-smooth font-sans antialiased'
       )}
@@ -75,27 +82,35 @@ export default async function RootLayout({ children }: RootLayoutProps) {
             <a
               target="_blank"
               rel="noopener noreferrer"
-              href="https://livekit.io"
-              className="scale-100 transition-transform duration-300 hover:scale-110"
+              href="https://murf.ai/api"
+              className="text-foreground flex scale-100 items-center gap-2 transition-transform duration-300 hover:scale-110"
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={logo} alt={`${companyName} Logo`} className="block size-6 dark:hidden" />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={logoDark ?? logo}
-                alt={`${companyName} Logo`}
-                className="hidden size-6 dark:block"
-              />
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 64 64"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                className="text-[var(--primary)]"
+              >
+                <path
+                  d="M32 56C32 56 12 42 12 24C12 16.5 17.5 11 25 11C29.2 11 32.6 13 32 17C33.4 13 36.8 11 39 11C46.5 11 52 16.5 52 24C52 42 32 56 32 56Z"
+                  fill="currentColor"
+                />
+              </svg>
+              <span className="font-mono text-xs font-bold tracking-wider uppercase">
+                Swasthya Sahayak
+              </span>
             </a>
             <span className="text-foreground font-mono text-xs font-bold tracking-wider uppercase">
-              Built with{' '}
+              Powered by{' '}
               <a
                 target="_blank"
                 rel="noopener noreferrer"
-                href="https://docs.livekit.io/agents"
+                href="https://murf.ai/api/docs/text-to-speech/streaming"
                 className="underline underline-offset-4"
               >
-                LiveKit Agents
+                Murf Falcon
               </a>
             </span>
           </header>
