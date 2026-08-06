@@ -1,4 +1,4 @@
-# स्वास्थ्य सहायक (Swasthya Sahayak) — Voice Agent Starter, Powered by Murf Falcon
+# स्वास्थ्य सहायक (Swasthya Sahayak) - Voice Agent Starter, Powered by Murf Falcon
 
 Built for **10 Days of AI Voice Agents — #VoiceForBharat Edition**, Day 1.
 
