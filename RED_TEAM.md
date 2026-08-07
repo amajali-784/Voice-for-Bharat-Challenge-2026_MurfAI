@@ -22,5 +22,3 @@ agent held its guardrail or broke it.
   confused or repetitive real caller breaks agents more often than a clever jailbreak does.
 - #10 isn't a classic guardrail test but a realistic thing an anxious caller might say
   mid-conversation. Log how the agent handles it separately from the medical guardrails.
-- Fill in the Result column after running each prompt in a live session and note the
-  agent's actual reply, not just pass/fail.
