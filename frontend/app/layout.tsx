@@ -1,6 +1,7 @@
 import { Mukta, Public_Sans } from 'next/font/google';
 import localFont from 'next/font/local';
 import { headers } from 'next/headers';
+import Link from 'next/link';
 import { ThemeProvider } from '@/components/app/theme-provider';
 import { ThemeToggle } from '@/components/app/theme-toggle';
 import { cn } from '@/lib/shadcn/utils';
@@ -78,41 +79,60 @@ export default async function RootLayout({ children }: RootLayoutProps) {
           enableSystem
           disableTransitionOnChange
         >
-          <header className="fixed top-0 left-0 z-50 hidden w-full flex-row justify-between p-6 md:flex">
-            <a
-              target="_blank"
-              rel="noopener noreferrer"
-              href="https://murf.ai/api"
-              className="text-foreground flex scale-100 items-center gap-2 transition-transform duration-300 hover:scale-110"
-            >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 64 64"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                className="text-[var(--primary)]"
-              >
-                <path
-                  d="M32 56C32 56 12 42 12 24C12 16.5 17.5 11 25 11C29.2 11 32.6 13 32 17C33.4 13 36.8 11 39 11C46.5 11 52 16.5 52 24C52 42 32 56 32 56Z"
-                  fill="currentColor"
-                />
-              </svg>
-              <span className="font-mono text-xs font-bold tracking-wider uppercase">
-                Swasthya Sahayak
+          <header className="fixed top-0 left-0 z-50 flex w-full flex-row items-center justify-between gap-2 p-4 md:p-6">
+            <Link href="/" className="group flex items-center gap-3">
+              <span className="bg-forest shadow-forest/20 dark:bg-sage flex size-10 shrink-0 items-center justify-center rounded-2xl shadow-lg transition-transform duration-300 group-hover:scale-110">
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 64 64"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden
+                >
+                  <path
+                    d="M32 50C32 50 13 38 13 23C13 16.5 18 11.5 24.5 11.5C28.2 11.5 31.2 13.4 32 16.5C32.8 13.4 35.8 11.5 39.5 11.5C46 11.5 51 16.5 51 23C51 38 32 50 32 50Z"
+                    fill="#fff9ed"
+                  />
+                  <path
+                    d="M24 30H40M32 22V38"
+                    stroke="#28543d"
+                    strokeWidth="4"
+                    strokeLinecap="round"
+                  />
+                </svg>
               </span>
-            </a>
-            <span className="text-foreground font-mono text-xs font-bold tracking-wider uppercase">
-              Powered by{' '}
-              <a
-                target="_blank"
-                rel="noopener noreferrer"
-                href="https://murf.ai/api/docs/text-to-speech/streaming"
-                className="underline underline-offset-4"
-              >
-                Murf Falcon
-              </a>
-            </span>
+              <span className="flex flex-col leading-tight">
+                <span
+                  className="text-foreground text-base font-bold"
+                  style={{ fontFamily: 'var(--font-mukta)' }}
+                >
+                  स्वास्थ्य सहायक
+                </span>
+                <span className="text-muted-foreground font-mono text-[9px] font-bold tracking-wider uppercase">
+                  Swasthya Sahayak · Health Voice Agent
+                </span>
+              </span>
+            </Link>
+
+            <div className="flex items-center gap-3">
+              <span className="border-border bg-card/70 text-muted-foreground hidden items-center gap-1.5 rounded-full border px-3 py-1.5 font-mono text-[10px] font-bold tracking-wider uppercase sm:inline-flex">
+                <span className="text-sage">हिंदी</span>
+                <span className="opacity-40">|</span>
+                English
+              </span>
+              <span className="text-foreground hidden font-mono text-xs font-bold tracking-wider uppercase md:inline">
+                Powered by{' '}
+                <a
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  href="https://murf.ai/api/docs/text-to-speech/streaming"
+                  className="text-sage hover:text-forest dark:text-sage-light underline underline-offset-4"
+                >
+                  Murf Falcon
+                </a>
+              </span>
+            </div>
           </header>
 
           {children}

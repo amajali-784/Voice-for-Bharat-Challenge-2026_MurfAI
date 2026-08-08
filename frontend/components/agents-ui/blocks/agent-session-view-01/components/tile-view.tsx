@@ -8,6 +8,7 @@ import {
   useTracks,
   useVoiceAssistant,
 } from '@livekit/components-react';
+import { DoctorAvatar, type DoctorState } from '@/components/app/doctor-avatar';
 import { cn } from '@/lib/shadcn/utils';
 import { AudioVisualizer } from './audio-visualizer';
 
@@ -92,13 +93,22 @@ export function TileLayout({
   audioVisualizerGridColumnCount,
   audioVisualizerWaveLineWidth,
 }: TileLayoutProps) {
-  const { videoTrack: agentVideoTrack } = useVoiceAssistant();
+  const { videoTrack: agentVideoTrack, state: agentAssistantState } = useVoiceAssistant();
   const [screenShareTrack] = useTracks([Track.Source.ScreenShare]);
   const cameraTrack: TrackReference | undefined = useLocalTrackRef(Track.Source.Camera);
 
   const isCameraEnabled = cameraTrack && !cameraTrack.publication.isMuted;
   const isScreenShareEnabled = screenShareTrack && !screenShareTrack.publication.isMuted;
   const hasSecondTile = isCameraEnabled || isScreenShareEnabled;
+
+  const doctorState: DoctorState =
+    agentAssistantState === 'speaking'
+      ? 'speaking'
+      : agentAssistantState === 'listening'
+        ? 'listening'
+        : agentAssistantState === 'thinking'
+          ? 'thinking'
+          : 'ready';
 
   const animationDelay = chatOpen ? 0 : 0.15;
   const isAvatar = agentVideoTrack !== undefined;
@@ -132,6 +142,15 @@ export function TileLayout({
                   }}
                   className={cn('relative aspect-square h-[90px]')}
                 >
+                  {/* Healing garden halo behind the visualizer */}
+                  <div
+                    aria-hidden
+                    className="absolute top-1/2 left-1/2 size-[320px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-2xl md:size-[460px]"
+                    style={{
+                      background:
+                        'radial-gradient(circle at center, color-mix(in srgb, #6b8e71 18%, transparent), transparent 70%)',
+                    }}
+                  />
                   <AudioVisualizer
                     key="audio-visualizer"
                     initial={{ scale: 1 }}
@@ -157,6 +176,10 @@ export function TileLayout({
                     )}
                     style={{ color: audioVisualizerColor }}
                   />
+                  {/* The one doctor — stays centered while the ring dances around him */}
+                  <div className="absolute top-1/2 left-1/2 size-[116px] -translate-x-1/2 -translate-y-1/2 drop-shadow-xl md:size-[150px]">
+                    <DoctorAvatar state={doctorState} />
+                  </div>
                 </motion.div>
               )}
 

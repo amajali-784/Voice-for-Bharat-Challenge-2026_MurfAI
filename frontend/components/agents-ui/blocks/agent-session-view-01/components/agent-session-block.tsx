@@ -1,8 +1,15 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Loader2, Mic } from 'lucide-react';
 import { AnimatePresence, type MotionProps, motion } from 'motion/react';
-import { useAgent, useSessionContext, useSessionMessages } from '@livekit/components-react';
+import {
+  type AgentState,
+  useAgent,
+  useSessionContext,
+  useSessionMessages,
+} from '@livekit/components-react';
+import type { AppConfig } from '@/app-config';
 import { AgentChatTranscript } from '@/components/agents-ui/agent-chat-transcript';
 import {
   AgentControlBar,
@@ -101,6 +108,135 @@ export function Fade({ top = false, bottom = false, className }: FadeProps) {
   );
 }
 
+interface AgentStatusBannerProps {
+  state: AgentState;
+  labels?: AppConfig['statusLabels'];
+}
+
+function ListeningIcon() {
+  return (
+    <span className="relative flex size-4 items-center justify-center">
+      <motion.span
+        aria-hidden
+        animate={{ scale: [1, 1.8], opacity: [0.4, 0] }}
+        transition={{ duration: 1.6, repeat: Infinity, ease: 'easeOut' }}
+        className="absolute inset-0 rounded-full bg-current opacity-40"
+      />
+      <Mic className="relative size-4" />
+    </span>
+  );
+}
+
+function SpeakingIcon() {
+  const levels = [0.45, 0.95, 0.3, 0.8, 0.55];
+  return (
+    <span className="flex h-4 items-center gap-[3px]">
+      {levels.map((level, i) => (
+        <motion.span
+          key={i}
+          animate={{ scaleY: [level, 1, level], opacity: [0.45, 1, 0.45] }}
+          transition={{
+            duration: 0.9,
+            repeat: Infinity,
+            repeatType: 'mirror',
+            ease: 'easeInOut',
+            delay: i * 0.12,
+          }}
+          className="h-full w-[3px] origin-center rounded-full bg-current"
+          style={{ scaleY: level }}
+        />
+      ))}
+    </span>
+  );
+}
+
+function ThinkingIcon() {
+  return (
+    <span className="flex h-4 items-center gap-1">
+      {[0, 1, 2].map((i) => (
+        <motion.span
+          key={i}
+          animate={{ opacity: [0.3, 1, 0.3], y: [0, -2, 0] }}
+          transition={{ duration: 1, repeat: Infinity, delay: i * 0.2, ease: 'easeInOut' }}
+          className="size-1.5 rounded-full bg-current"
+        />
+      ))}
+    </span>
+  );
+}
+
+function AgentStatusBanner({ state, labels }: AgentStatusBannerProps) {
+  const info = useMemo(() => {
+    switch (state) {
+      case 'connecting':
+      case 'initializing':
+      case 'pre-connect-buffering':
+        return {
+          icon: <Loader2 className="size-4 animate-spin" />,
+          className:
+            'border-sage/30 bg-sage/10 text-forest dark:border-sage-light/25 dark:bg-sage-light/10 dark:text-sage-light',
+          en: labels?.connecting.en ?? 'Connecting…',
+          hi: labels?.connecting.hi ?? 'आपका स्वास्थ्य सहायक तैयार हो रहा है',
+        };
+      case 'listening':
+        return {
+          icon: <ListeningIcon />,
+          className:
+            'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
+          en: labels?.listening.en ?? 'Listening to you',
+          hi: labels?.listening.hi ?? 'आप बोलें — मैं सुन रहा हूँ',
+        };
+      case 'thinking':
+        return {
+          icon: <ThinkingIcon />,
+          className:
+            'border-gold/35 bg-gold/10 text-terracotta dark:border-gold/30 dark:bg-gold/10 dark:text-amber-200',
+          en: labels?.thinking.en ?? 'Thinking…',
+          hi: labels?.thinking.hi ?? 'सोच रहा हूँ',
+        };
+      case 'speaking':
+        return {
+          icon: <SpeakingIcon />,
+          className:
+            'border-peach/50 bg-peach/15 text-terracotta dark:border-peach/30 dark:bg-peach/10 dark:text-peach',
+          en: labels?.speaking.en ?? 'Agent is speaking',
+          hi: labels?.speaking.hi ?? 'एजेंट बोल रहा है',
+        };
+      default:
+        return null;
+    }
+  }, [state, labels]);
+
+  if (!info) {
+    return null;
+  }
+
+  return (
+    <div className="absolute top-4 left-1/2 z-40 -translate-x-1/2 md:top-6">
+      <motion.div
+        key={state}
+        initial={{ opacity: 0, translateY: -10, scale: 0.95 }}
+        animate={{ opacity: 1, translateY: 0, scale: 1 }}
+        exit={{ opacity: 0, translateY: -10, scale: 0.95 }}
+        transition={{ duration: 0.25, ease: 'easeOut' }}
+        className={cn(
+          'flex items-center gap-2.5 rounded-full border px-4 py-2 shadow-sm backdrop-blur',
+          info.className
+        )}
+      >
+        <span className="flex items-center">{info.icon}</span>
+        <span className="text-sm leading-tight font-semibold">{info.en}</span>
+        <span
+          className="text-xs leading-tight font-medium opacity-70"
+          style={{ fontFamily: 'var(--font-mukta)' }}
+        >
+          {info.hi}
+        </span>
+      </motion.div>
+    </div>
+  );
+}
+
 export interface AgentSessionView_01Props {
   /**
    * Message shown above the controls before the first chat message is sent.
@@ -151,6 +287,8 @@ export interface AgentSessionView_01Props {
   audioVisualizerRadialRadius?: number;
   /** Stroke width of the wave path when `audioVisualizerType` is `wave`. */
   audioVisualizerWaveLineWidth?: number;
+  /** Bilingual status labels shown in the live status banner. */
+  statusLabels?: AppConfig['statusLabels'];
   /** Optional class name merged onto the outer `<section>` container. */
   className?: string;
 }
@@ -171,6 +309,7 @@ export function AgentSessionView_01({
   audioVisualizerRadialBarCount,
   audioVisualizerRadialRadius,
   audioVisualizerWaveLineWidth,
+  statusLabels,
   ref,
   className,
   ...props
@@ -205,6 +344,8 @@ export function AgentSessionView_01({
       {...props}
     >
       <Fade top className="absolute inset-x-4 top-0 z-10 h-40" />
+      {/* Live status banner (connecting / listening / speaking) */}
+      <AgentStatusBanner state={agentState} labels={statusLabels} />
       {/* transcript */}
 
       <div className="absolute top-0 bottom-[135px] flex w-full flex-col md:bottom-[170px]">

@@ -5,72 +5,74 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --radius: 1rem;
+
+  /* Healing Garden — warm cream + sage + forest */
+  --background: #fbf6ec;
+  --foreground: #2a3b30;
+  --card: #fffdf6;
+  --card-foreground: #2a3b30;
+  --popover: #fffdf6;
+  --popover-foreground: #2a3b30;
+  --primary: #28543d;
+  --primary-foreground: #fff9ed;
+  --secondary: #ece6d2;
+  --secondary-foreground: #2a3b30;
+  --muted: #f1ecdd;
+  --muted-foreground: #64705f;
+  --accent: #6b8e71;
+  --accent-foreground: #fffdf6;
+  --destructive: #b94a36;
+  --border: #e2dac2;
+  --input: #e2dac2;
+  --ring: #6b8e71;
+  --chart-1: #6b8e71;
+  --chart-2: #d9a441;
+  --chart-3: #e9a58f;
+  --chart-4: #234236;
+  --chart-5: #8a4a33;
+  --sidebar: #fff9ed;
+  --sidebar-foreground: #2a3b30;
+  --sidebar-primary: #28543d;
+  --sidebar-primary-foreground: #fff9ed;
+  --sidebar-accent: #ece6d2;
+  --sidebar-accent-foreground: #2a3b30;
+  --sidebar-border: #e2dac2;
+  --sidebar-ring: #6b8e71;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.269 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.371 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.439 0 0);
+  --background: #0f1c15;
+  --foreground: #e8f0e5;
+  --card: #16251c;
+  --card-foreground: #e8f0e5;
+  --popover: #1b2c21;
+  --popover-foreground: #e8f0e5;
+  --primary: #93bc9b;
+  --primary-foreground: #102018;
+  --secondary: #22342a;
+  --secondary-foreground: #e8f0e5;
+  --muted: #213229;
+  --muted-foreground: #a8b8a6;
+  --accent: #2b4234;
+  --accent-foreground: #e8f0e5;
+  --destructive: #e08a76;
+  --border: rgba(232, 240, 229, 0.1);
+  --input: rgba(232, 240, 229, 0.14);
+  --ring: #6b8e71;
+  --chart-1: #8fb99b;
+  --chart-2: #d9a441;
+  --chart-3: #e9a58f;
+  --chart-4: #234236;
+  --chart-5: #e08a76;
+  --sidebar: #102018;
+  --sidebar-foreground: #e8f0e5;
+  --sidebar-primary: #8fb99b;
+  --sidebar-primary-foreground: #102018;
+  --sidebar-accent: #213229;
+  --sidebar-accent-foreground: #e8f0e5;
+  --sidebar-border: rgba(232, 240, 229, 0.1);
+  --sidebar-ring: #6b8e71;
 }
 
 @theme inline {
@@ -80,6 +82,15 @@
   --font-mono:
     var(--font-commit-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     'Liberation Mono', 'Courier New', monospace;
+
+  /* Healing Garden palette tokens */
+  --color-sage: #6b8e71;
+  --color-sage-light: #a8c3a8;
+  --color-forest: #234236;
+  --color-cream: #fff9ed;
+  --color-peach: #e9a58f;
+  --color-gold: #d9a441;
+  --color-terracotta: #8a4a33;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -121,4 +132,71 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Subtle botanical leaf pattern (tulsi sprigs + dots) */
+.botanical-bg {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cg fill='none' stroke='%23234236' stroke-opacity='0.05'%3E%3Cpath d='M20 160 C20 130 45 118 62 112 C55 128 48 146 48 160 C38 152 28 152 20 160 Z'/%3E%3Cpath d='M160 20 C160 50 135 62 118 68 C125 52 132 34 132 20 C142 28 152 28 160 20 Z'/%3E%3Cpath d='M118 118 C118 100 136 92 148 88 C143 100 138 112 138 118 C131 113 124 113 118 118 Z'/%3E%3Ccircle cx='46' cy='46' r='3'/%3E%3Ccircle cx='140' cy='132' r='2.5'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 180px 180px;
+}
+
+.dark .botanical-bg {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cg fill='none' stroke='%23e8f0e5' stroke-opacity='0.045'%3E%3Cpath d='M20 160 C20 130 45 118 62 112 C55 128 48 146 48 160 C38 152 28 152 20 160 Z'/%3E%3Cpath d='M160 20 C160 50 135 62 118 68 C125 52 132 34 132 20 C142 28 152 28 160 20 Z'/%3E%3Cpath d='M118 118 C118 100 136 92 148 88 C143 100 138 112 138 118 C131 113 124 113 118 118 Z'/%3E%3Ccircle cx='46' cy='46' r='3'/%3E%3Ccircle cx='140' cy='132' r='2.5'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% center;
+  }
+  100% {
+    background-position: -200% center;
+  }
+}
+
+@keyframes spin-slow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes float-y {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.2;
+    transform: scale(0.75);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 6s linear infinite;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 30s linear infinite;
+}
+
+.animate-spin-slower {
+  animation: spin-slow 52s linear infinite reverse;
+}
+
+.animate-float {
+  animation: float-y 6s ease-in-out infinite;
+}
+
+.animate-twinkle {
+  animation: twinkle 3.2s ease-in-out infinite;
 }

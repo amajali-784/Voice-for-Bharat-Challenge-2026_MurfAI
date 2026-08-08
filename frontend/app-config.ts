@@ -30,13 +30,21 @@ export interface AppConfig {
 
   // LiveKit Cloud Sandbox configuration
   sandboxId?: string;
+
+  // Bilingual status labels shown during a live session
+  statusLabels?: {
+    connecting: { en: string; hi: string };
+    listening: { en: string; hi: string };
+    thinking: { en: string; hi: string };
+    speaking: { en: string; hi: string };
+  };
 }
 
 export const APP_CONFIG_DEFAULTS: AppConfig = {
   companyName: 'Swasthya Sahayak',
-  pageTitle: 'स्वास्थ्य सहायक | Health Voice Agent',
+  pageTitle: 'स्वास्थ्य सहायक · Healing Garden Voice Agent',
   pageDescription:
-    'A Hindi voice agent that helps with symptoms, nearby clinics, and doctor guidance — powered by Murf Falcon TTS',
+    'A bilingual (Hindi + English) health voice agent that helps with symptoms, nearby clinics, and doctor guidance — powered by Murf Falcon TTS',
 
   supportsChatInput: true,
   supportsVideoInput: false,
@@ -44,16 +52,25 @@ export const APP_CONFIG_DEFAULTS: AppConfig = {
   isPreConnectBufferEnabled: true,
 
   logo: '/murf-logo.svg',
-  accent: '#0E9F6E',
+  accent: '#28543D',
   logoDark: '/murf-logo-dark.svg',
-  accentDark: '#34D399',
-  startButtonText: 'बातचीत शुरू करें (Start Your Call)',
+  accentDark: '#93BC9B',
+  startButtonText: 'Start Talking · बातचीत शुरू करें',
+
+  statusLabels: {
+    connecting: { en: 'Connecting…', hi: 'आपका स्वास्थ्य सहायक तैयार हो रहा है' },
+    listening: { en: 'Listening to you', hi: 'बोलिए — मैं सुन रहा हूँ' },
+    thinking: { en: 'Thinking…', hi: 'सोच रहा हूँ' },
+    speaking: { en: 'I am speaking', hi: 'सुनिए — मैं बोल रहा हूँ' },
+  },
 
   // optional: audio visualization configuration
-  audioVisualizerType: 'wave',
-  audioVisualizerColor: '#0E9F6E',
-  audioVisualizerColorDark: '#34D399',
+  audioVisualizerType: 'radial',
+  audioVisualizerColor: '#6B8E71',
+  audioVisualizerColorDark: '#A8C3A8',
   audioVisualizerColorShift: 0.3,
+  audioVisualizerRadialBarCount: 48,
+  audioVisualizerRadialRadius: 110,
   audioVisualizerWaveLineWidth: 3,
 
   // agent dispatch configuration
