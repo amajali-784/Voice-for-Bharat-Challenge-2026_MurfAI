@@ -8,6 +8,9 @@ Built for **10 Days of AI Voice Agents — #VoiceForBharat Edition**, Day 1.
 
 **Why this voice:** a health-guidance line needs to sound calm, patient, and trustworthy rather than upbeat or transactional — Pooja's warmer register fits someone anxious about symptoms better than a brisk customer-support tone would.
 
+<img width="2880" height="1534" alt="Screenshot 2026-08-08 213800" src="https://github.com/user-attachments/assets/5739e96d-72e3-484a-9c97-f203245677f2" />
+
+
 Forked from the original [Murf LiveKit Starter](https://github.com/murf-ai/murf-livekit-starter) and customized into a Hindi-speaking health-access assistant that helps people understand symptoms in plain language, points them to nearby care, and always defers real diagnosis to a doctor.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Murf Falcon](https://img.shields.io/badge/TTS-Murf%20Falcon-6366F1)](https://murf.ai/api/docs/text-to-speech/streaming) [![LiveKit](https://img.shields.io/badge/Transport-LiveKit-002cf2)](https://docs.livekit.io) [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/) [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
