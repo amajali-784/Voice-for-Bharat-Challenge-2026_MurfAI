@@ -14,6 +14,7 @@ forget their health profile across calls using a SQLite-backed store
 is greeted by name and by what we remember.
 """
 
+import asyncio
 import logging
 from pathlib import Path
 
@@ -22,6 +23,7 @@ from livekit.agents import (
     Agent,
     AgentSession,
     JobContext,
+    JobProcess,
     RunContext,
     WorkerOptions,
     cli,
@@ -250,19 +252,31 @@ class Assistant(Agent):
         }
 
 
-def resolve_caller_id(ctx: JobContext) -> str:
+def prewarm(proc: JobProcess) -> None:
+    """Pre-load the Silero VAD model into the job process at startup so the
+    first call doesn't pay the one-time ONNX model load inside the entrypoint
+    (which can make the first call slow or silent)."""
+    proc.userdata["vad"] = silero.VAD.load()
+
+
+async def resolve_caller_id(ctx: JobContext) -> str:
     """The caller's identity on the room is their persistent caller_id,
-    minted by the frontend token route.  Falls back to 'anonymous'."""
-    for participant in ctx.room.remote_participants.values():
-        if participant.identity:
-            return participant.identity
+    minted by the frontend token route.
+
+    The participant list can be empty right after `ctx.connect()`, so wait
+    briefly for the caller to appear before falling back to 'anonymous'."""
+    for _ in range(100):  # wait up to ~5s for the caller to join
+        for participant in ctx.room.remote_participants.values():
+            if participant.identity:
+                return participant.identity
+        await asyncio.sleep(0.05)
     return "anonymous"
 
 
 async def entrypoint(ctx: JobContext):
     await ctx.connect()
 
-    caller_id = resolve_caller_id(ctx)
+    caller_id = await resolve_caller_id(ctx)
     profile = MEMORY_STORE.get(caller_id)
     is_returning = bool(profile and profile.get("name"))
 
@@ -275,7 +289,7 @@ async def entrypoint(ctx: JobContext):
             tokenizer=SentenceTokenizer(min_sentence_len=2),
             text_pacing=True,
         ),
-        vad=silero.VAD.load(),
+        vad=ctx.proc.userdata.get("vad") or silero.VAD.load(),
         turn_detection=MultilingualModel(),
         preemptive_generation=True,
         userdata={"caller_id": caller_id, "store": MEMORY_STORE, "profile": profile},
@@ -288,22 +302,30 @@ async def entrypoint(ctx: JobContext):
     if is_returning:
         logger.info("Returning caller '%s' (%s)", profile["name"], caller_id)
         await session.generate_reply(
+            allow_interruptions=False,
             instructions=(
                 f"यह एक वापस आने वाला कॉलर है जिसका नाम {profile['name']} है। "
                 "गर्मजोशी से नाम लेकर अभिवादन करें और एक वाक्य में बताएं कि उन्हें पहले "
                 "से याद है, फिर पूछें कि उनकी सेहत अब कैसी है और आज किस चीज़ में मदद करें। "
                 "पूरी प्राइवेट जानकारी न दोहराएँ। छोटा रखें।"
-            )
+            ),
         )
     else:
         await session.generate_reply(
+            allow_interruptions=False,
             instructions=(
                 "अपना परिचय दें: आप 'स्वास्थ्य सहायक' हैं। एक वाक्य में बताएं कि आप किस "
                 "तरह मदद कर सकते हैं — लक्षण समझने में और नज़दीकी देखभाल खोजने में — और "
                 "पूछें कि आज आप किस चीज़ में मदद कर सकते हैं। छोटा और गर्मजोशी भरा रखें।"
-            )
+            ),
         )
 
 
 if __name__ == "__main__":
-    cli.run_app(WorkerOptions(entrypoint_fnc=entrypoint, agent_name="my-agent"))
+    cli.run_app(
+        WorkerOptions(
+            entrypoint_fnc=entrypoint,
+            agent_name="my-agent",
+            prewarm_fnc=prewarm,
+        )
+    )
