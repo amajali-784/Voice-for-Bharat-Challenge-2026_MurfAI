@@ -1,3 +1,4 @@
+import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { AccessToken, type AccessTokenOptions, type VideoGrant } from 'livekit-server-sdk';
 import { RoomConfiguration } from '@livekit/protocol';
@@ -43,10 +44,19 @@ export async function POST(req: Request) {
         { ignoreUnknownFields: true }
       );
     }
-      
-    // Generate participant token
+
+    // Persistent caller identity: reuse the caller_id cookie across calls so
+    // the voice agent can remember the caller (Day 4). Mint one on first visit.
+    const cookieStore = await cookies();
+    let callerId = cookieStore.get('caller_id')?.value;
+    if (!callerId) {
+      callerId = `caller_${crypto.randomUUID()}`;
+    }
+
+    // Generate participant token. The identity is the caller_id so the agent
+    // worker can resolve whose memory to load.
     const participantName = 'user';
-    const participantIdentity = `voice_assistant_user_${Math.floor(Math.random() * 10_000)}`;
+    const participantIdentity = callerId;
     const roomName = `voice_assistant_room_${Math.floor(Math.random() * 10_000)}`;
 
     const participantToken = await createParticipantToken(
@@ -65,7 +75,14 @@ export async function POST(req: Request) {
     const headers = new Headers({
       'Cache-Control': 'no-store',
     });
-    return NextResponse.json(data, { headers });
+    const response = NextResponse.json(data, { headers });
+    response.cookies.set('caller_id', callerId, {
+      path: '/',
+      maxAge: 60 * 60 * 24 * 365, // keep the caller's identity for a year
+      httpOnly: true,
+      sameSite: 'lax',
+    });
+    return response;
   } catch (error) {
     if (error instanceof Error) {
       console.error(error);

@@ -9,6 +9,6 @@ fi
 
 (cd backend && uv run python src/agent.py dev) &
 (cd frontend && pnpm dev) &
-
+(uv run python src/memory_api.py) &
 # Wait for all background jobs
 wait
