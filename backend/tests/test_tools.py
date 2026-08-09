@@ -94,3 +94,56 @@ async def test_forget_caller(store: CallerStore, caller_id: str) -> None:
     result = await agent.forget_caller(ctx)
     assert result["forgotten"] is True
     assert store.get(caller_id) is None
+
+
+@pytest.mark.asyncio
+async def test_find_nearby_health_facilities_calls_lookup(
+    monkeypatch, store: CallerStore, caller_id: str
+) -> None:
+    """Day 5: the tool method should hand the location to the lookup and return
+    whatever it says — including a graceful 'unavailable' result."""
+    captured: dict = {}
+
+    async def fake_lookup(location: str, facility_type: str = "hospital") -> dict:
+        captured["location"] = location
+        captured["facility_type"] = facility_type
+        return {
+            "status": "ok",
+            "source": "local",
+            "data_as_of": "2026-08-09T00:00:00Z",
+            "facilities": [
+                {
+                    "name": "Sir Sunderlal Hospital BHU",
+                    "type": "hospital",
+                    "address": "BHU Campus, Varanasi",
+                }
+            ],
+        }
+
+    monkeypatch.setattr("agent.lookup_health_facilities", fake_lookup)
+    ctx = _make_ctx({"caller_id": caller_id, "store": store})
+
+    result = await Assistant().find_nearby_health_facilities(ctx, "Varanasi")
+    assert result["status"] == "ok"
+    assert captured["location"] == "Varanasi"
+    assert captured["facility_type"] == "hospital"
+
+
+@pytest.mark.asyncio
+async def test_find_nearby_health_facilities_unavailable_is_passed_through(
+    monkeypatch, store: CallerStore, caller_id: str
+) -> None:
+    async def fake_lookup(location: str, facility_type: str = "hospital") -> dict:
+        return {
+            "status": "unavailable",
+            "source": "none",
+            "facilities": [],
+            "message": "The live health-facility data source could not be reached.",
+        }
+
+    monkeypatch.setattr("agent.lookup_health_facilities", fake_lookup)
+    ctx = _make_ctx({"caller_id": caller_id, "store": store})
+
+    result = await Assistant().find_nearby_health_facilities(ctx, "Delhi")
+    assert result["status"] == "unavailable"
+    assert result["facilities"] == []

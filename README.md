@@ -1,6 +1,6 @@
 # स्वास्थ्य सहायक (Swasthya Sahayak) — Voice Agent Starter, Powered by Murf Falcon
 
-Built for **10 Days of AI Voice Agents — #VoiceForBharat Edition**, Day 4.
+Built for **10 Days of AI Voice Agents — #VoiceForBharat Edition**, Day 5.
 
 **Track:** Health Access
 
@@ -19,6 +19,7 @@ Forked from the original [Murf LiveKit Starter](https://github.com/murf-ai/murf-
 - Listens and replies in the caller's own register — Hindi, English, or Hinglish — using simple, non-technical language.
 - Helps users talk through symptoms conversationally — without ever diagnosing or prescribing.
 - Points users toward nearby health centres and explains when a symptom warrants urgent care.
+- **Looks up real nearby facilities** — when a caller asks for a hospital, clinic, doctor or pharmacy, it finds actual, current facilities near their village/town (live OpenStreetMap data, with a curated offline fallback), says where the data came from and how fresh it is, and speaks a graceful fallback if the data source is down.
 - Always defers to a real doctor or the **108** emergency line for anything serious.
 - **Remembers returning callers** (name, village, conditions, medicines, allergies) via a SQLite-backed memory store, so a second call doesn't start from zero.
 - Forgets everything on request — the caller can ask to be erased, and an admin page lists what's remembered.
@@ -40,20 +41,23 @@ Forked from the original [Murf LiveKit Starter](https://github.com/murf-ai/murf-
 ```mermaid
 flowchart LR
     A[🎙️ Caller speaks Hindi/Hinglish] -->|audio| B[Deepgram STT — nova-3, multilingual]
-    B -->|text| C[Gemini LLM + memory tools]
+    B -->|text| C[Gemini LLM + tools]
     C <-->|lookup / save / forget| M[(SQLite caller memory)]
+    C --find_nearby_health_facilities--> F[facilities.py<br/>live OSM + offline fallback]
+    F -->|source + data_as_of + names| C
     C -->|response text| D[Murf Falcon TTS — hi-IN-anisha]
     D -->|audio| E[LiveKit]
-    E -->|stream| F[🔊 Caller hears Hindi reply]
-    M -->|GET /callers| G[Admin page /admin]
+    E -->|stream| G[🔊 Caller hears Hindi reply]
+    M -->|GET /callers| H[Admin page /admin]
 
     style A fill:#444441,stroke:#888780,color:#fff
     style B fill:#185FA5,stroke:#85B7EB,color:#fff
     style C fill:#534AB7,stroke:#AFA9EC,color:#fff
     style D fill:#0F6E56,stroke:#5DCAA5,color:#fff
     style E fill:#D85A30,stroke:#F0997B,color:#fff
-    style F fill:#444441,stroke:#888780,color:#fff
+    style F fill:#0E5F6E,stroke:#5FC2D1,color:#fff
     style G fill:#444441,stroke:#888780,color:#fff
+    style H fill:#444441,stroke:#888780,color:#fff
 ```
 
 ---
@@ -149,7 +153,65 @@ Then open **http://localhost:3000**. Click **बातचीत शुरू क
 
 ---
 
+## Day 5 — A real tool: nearby health-facility lookup
+
+The agent can now answer "हमारे यहाँ नज़दीकी अस्पताल कहाँ है?" with **real data**
+instead of only a generic "ask your ASHA worker".
+
+- **`backend/src/facilities.py`** — the lookup engine. `lookup_health_facilities(location, facility_type)`
+  returns the closest few facilities (name, type, distance, address, phone when known).
+- **Agent tool `find_nearby_health_facilities`** — a `@function_tool` on `Assistant` in `agent.py`.
+  The LLM decides when to call it from the tool description + a `TOOLS` section in the system prompt.
+- **Chained with Day 4 memory** — if a returning caller asks for a nearby hospital, the agent uses
+  their *saved* village/district from `lookup_caller` instead of asking again.
+
+### Live vs. local data (read this)
+
+1. **Live (default): OpenStreetMap.** The place name is geocoded with **Nominatim**
+   (`countrycodes=in`) and nearby facilities are pulled from the **Overpass API**.
+   Free, keyless, and current — the result is tagged `source="live"` with a
+   `data_as_of` timestamp, and the agent says so out loud ("यह अभी की जानकारी है,
+   OpenStreetMap से"). Several public Overpass mirrors are tried in order.
+2. **Local fallback:** a small **hand-built curated list** in `LOCAL_FACILITIES`
+   (well-known public hospitals for ~15 major districts, `source="local"`). Used only
+   when the network is down or a place can't be geocoded. It is **not exhaustive**
+   and the agent says it is reading from its saved offline list.
+3. **Failure path:** if neither source works, the tool returns `status="unavailable"`
+   (explicitly *no* facilities invented) and the agent speaks a graceful line —
+   "अभी नज़दीकी सुविधाओं की जानकारी मिल नहीं पा रही है" — then suggests ASHA / PHC / 108.
+   The agent never goes silent and never hallucinates a hospital name, distance or phone.
+
+### Data recency
+
+Every result carries `source` ("live" | "local" | "none") and `data_as_of` (ISO timestamp),
+and the system prompt instructs the agent to state when the data is from ("अभी", "आज", "कल").
+"Yesterday's rate and today's rate are different decisions" — same rule here for facility info.
+
+### Demoing the failure path (for your video)
+
+Set either env var to an unreachable URL before starting the agent, and the live path
+cannot connect:
+
+```bash
+# backend/.env.local
+FACILITIES_NOMINATIM_URL=http://127.0.0.1:9/nominatim
+# or: FACILITIES_OVERPASS_URL=http://127.0.0.1:9/overpass
+```
+
+The agent then speaks the local-list answer for covered districts and the graceful
+unavailable message otherwise. `FACILITIES_OVERPASS_URLS` (comma-separated) overrides
+the Overpass mirror list.
+
+### Ask the agent something that fires the tool
+
+> "मुझे अपने पास का सरकारी अस्पताल बताइए" — with a saved location from a previous call,
+> the agent answers from memory-mined location without asking where you live.
+
+---
+
 ## Day 4 — Persistent caller memory
+
+
 
 The agent remembers callers across calls so a returning patient doesn't repeat their story. On the first visit the frontend mints a `caller_id` cookie (1 year) and passes it as the LiveKit participant identity; on every call the backend resolves that identity and greets returning callers by name.
 
@@ -215,8 +277,9 @@ Day 1 latency (end-of-user-speech → first audio out): ___ ms
 voice-for-bharat-challenge-2026/
 ├── backend/                 # Python voice agent (LiveKit Agents + Murf Falcon)
 │   ├── src/
-│   │   ├── agent.py         # Health Access system prompt + memory tools + Anisha pipeline
+│   │   ├── agent.py         # Health Access system prompt + memory/facility tools + Anisha pipeline
 │   │   ├── memory.py        # SQLite CallerStore — persistent caller memory
+│   │   ├── facilities.py    # Day 5 — live OSM + offline health-facility lookup
 │   │   └── memory_api.py    # Admin API (GET/DELETE callers) on :8700
 │   ├── tests/               # Pytest: memory store, tools, and agent evals
 │   ├── .env.example

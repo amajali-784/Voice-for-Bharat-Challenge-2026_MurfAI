@@ -7,10 +7,11 @@ This is a monorepo for a voice AI agent starter, powered by Murf Falcon TTS and 
 ```
 voice-for-bharat-challenge-2026/
 ├── backend/          # Python voice agent (LiveKit Agents + Murf Falcon TTS)
-│   ├── src/agent.py  # Agent entrypoint — pipeline + memory tools + system prompt
+│   ├── src/agent.py  # Agent entrypoint — pipeline + memory + facility tools + system prompt
 │   ├── src/memory.py # SQLite CallerStore — persistent caller memory (Day 4)
+│   ├── src/facilities.py # Nearby health-facility lookup — live OSM + offline fallback (Day 5)
 │   ├── src/memory_api.py # Admin HTTP API — GET/DELETE callers on :8700 (Day 4)
-│   └── tests/        # LLM-judged eval tests + memory/tool unit tests
+│   └── tests/        # LLM-judged eval tests + memory/facility/tool unit tests
 ├── frontend/         # Next.js UI (LiveKit Agents UI components)
 │   ├── app/          # Pages and API routes (incl. /admin and /api/token)
 │   ├── components/   # UI components (agents-ui, app, ui)
@@ -32,9 +33,22 @@ voice-for-bharat-challenge-2026/
 ### Key file: `backend/src/agent.py`
 This is the single entrypoint. It contains:
 - `SYSTEM_PROMPT` — controls the agent's behavior (change this to change the use case)
-- `Assistant` class — extends `Agent`, where tools are added via `@function_tool` (Day 4: `lookup_caller`, `save_caller_info`, `add_note`, `forget_caller`)
+- `Assistant` class — extends `Agent`, where tools are added via `@function_tool` (Day 4: `lookup_caller`, `save_caller_info`, `add_note`, `forget_caller`; Day 5: `find_nearby_health_facilities`)
 - `my_agent()` — sets up the voice pipeline (STT → LLM → TTS) and connects to LiveKit
 - `prewarm()` — pre-loads the Silero VAD model
+
+### Health-facility lookup (Day 5)
+- `backend/src/facilities.py` — `lookup_health_facilities(location, facility_type)`. Prefers
+  live OpenStreetMap (Nominatim geocode + Overpass API, keyless), falls back to the curated
+  offline `LOCAL_FACILITIES` list, and returns `status="unavailable"` (never fabricated data)
+  if both fail. Every result has `source` ("live" | "local" | "none") and `data_as_of`.
+- The `find_nearby_health_facilities` tool chains with Day 4 memory: use the caller's saved
+  `location` from `lookup_caller` when they haven't just named a new one.
+- Kill-switch env vars to demo the failure path: `FACILITIES_NOMINATIM_URL`,
+  `FACILITIES_OVERPASS_URL`, or `FACILITIES_OVERPASS_URLS` (comma-separated mirrors).
+- When writing a response, the agent must say the data source and recency out loud and must
+  NOT read JSON or invent facility names/phones. This is enforced in the `TOOLS`/`STYLE`
+  sections of `SYSTEM_PROMPT`.
 
 ### Caller memory (Day 4)
 - `backend/src/memory.py` — `CallerStore` (SQLite, WAL). `upsert` does a partial merge: `None` fields are left untouched, list fields (conditions/medications/allergies/notes) are deduped and appended.
@@ -70,7 +84,7 @@ uv run ruff format .
 Config is in `pyproject.toml` — 88 char line length, double quotes, space indent.
 
 ### Testing
-Tests are in `backend/tests/test_agent.py` (LLM-as-judge evals), `backend/tests/test_memory.py` (CallerStore), and `backend/tests/test_tools.py` (tool methods with a fake RunContext). They use LiveKit's testing framework with LLM-as-judge evaluation (not mocks). Run with:
+Tests are in `backend/tests/test_agent.py` (LLM-as-judge evals), `backend/tests/test_memory.py` (CallerStore), `backend/tests/test_tools.py` (tool methods with a fake RunContext), and `backend/tests/test_facilities.py` (lookup logic; network is monkeypatched so tests never hit Overpass/Nominatim). They use LiveKit's testing framework with LLM-as-judge evaluation (not mocks). Run with:
 ```bash
 uv run pytest
 ```

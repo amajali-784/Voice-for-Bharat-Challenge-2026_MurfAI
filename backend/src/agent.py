@@ -1,5 +1,5 @@
 """
-Voice Agent — Health Access Track (#VoiceForBharat, Day 4)
+Voice Agent — Health Access Track (#VoiceForBharat, Day 5)
 Speaks Hindi (or matches the caller's register) via Murf Falcon TTS (Anisha,
 a multilingual Indian voice) with a conversational style.
 
@@ -12,6 +12,13 @@ Day 4 adds: persistent caller memory.  Each caller has a stable `caller_id`
 forget their health profile across calls using a SQLite-backed store
 (`memory.py`).  A first-time caller is greeted normally; a returning caller
 is greeted by name and by what we remember.
+
+Day 5 adds: a real tool.  `find_nearby_health_facilities` looks up actual
+nearby hospitals/clinics/pharmacies for the caller's area — live data from
+OpenStreetMap when reachable, with a curated offline fallback list and a
+graceful spoken message when the data source is down (`facilities.py`).  The
+agent chains this with Day 4 memory: it uses the caller's saved village/district
+instead of asking again.
 """
 
 import asyncio
@@ -33,6 +40,7 @@ from livekit.agents.tokenize.basic import SentenceTokenizer
 from livekit.plugins import deepgram, google, murf, silero
 from livekit.plugins.turn_detector.multilingual import MultilingualModel
 
+from facilities import lookup_health_facilities
 from memory import DEFAULT_DB_PATH, CallerStore
 
 logging.basicConfig(level=logging.INFO)
@@ -45,9 +53,9 @@ load_dotenv(dotenv_path=Path(__file__).parent.parent / ".env.local")
 MEMORY_STORE = CallerStore(DEFAULT_DB_PATH)
 
 # ---------------------------------------------------------------------------
-# SYSTEM PROMPT — Health Access track, Day 4
-# Structured per: IDENTITY / OBJECTIVES / KNOWLEDGE / LANGUAGE / MEMORY /
-#                 GUARDRAILS / STYLE
+# SYSTEM PROMPT — Health Access track, Day 5
+# Structured per: IDENTITY / OBJECTIVES / KNOWLEDGE / TOOLS / LANGUAGE /
+#                 MEMORY / GUARDRAILS / STYLE
 # ---------------------------------------------------------------------------
 SYSTEM_PROMPT = """
 IDENTITY
@@ -63,10 +71,35 @@ OBJECTIVES (एक सफल कॉल में यह होना चाह�
    एस्केलेट करना — बातचीत जारी रखने से पहले।
 
 KNOWLEDGE (आप क्या जानते हैं, और कहाँ रुकते हैं)
-- आपके पास सामान्य स्वास्थ्य जानकारी है, लेकिन आपके पास उपयोगकर्ता के नज़दीक किसी
-  विशेष अस्पताल या क्लिनिक का लाइव डेटा नहीं है। नज़दीकी केंद्र के लिए हमेशा सुझाव दें
-  कि वे स्थानीय ASHA वर्कर, PHC (Primary Health Centre), या 108 से संपर्क करें।
+- आपके पास सामान्य स्वास्थ्य जानकारी है। नज़दीकी अस्पताल/क्लिनिक/फ़ार्मेसी की जानकारी
+  के लिए आपके पास एक लाइव उपकरण है — find_nearby_health_facilities (TOOLS section देखें)।
 - आप कोई प्रयोगशाला रिपोर्ट, स्कैन, या तस्वीर पढ़ या समझ नहीं सकते।
+
+TOOLS (नज़दीकी स्वास्थ्य सुविधाएँ — find_nearby_health_facilities)
+- जैसे ही कॉलर नज़दीकी अस्पताल, क्लिनिक, डॉक्टर, PHC या फ़ार्मेसी पूछे, या यह जानना चाहे
+  कि उनके इलाके में कौन-सी स्वास्थ्य सुविधाएँ हैं, तो जवाब देने से पहले यह उपकरण कॉल करें।
+  भले ही कॉलर ने इलाका न बताया हो — तब lookup_caller से सहेजा location लें और उसी से कॉल करें।
+- स्थान (location) कैसे तय करें:
+  1. अगर कॉलर ने इसी बातचीत में अपना गाँव/शहर/ज़िला बताया है, तो वही इस्तेमाल करें।
+  2. नहीं तो lookup_caller से सहेजा गया location इस्तेमाल करें — फिर से न पूछें।
+  3. दोनों उपलब्ध न हों, तो एक बार विनम्रता से इलाका पूछें।
+- उपकरण का जवाब structured होता है:
+  - status: ok / not_found / unavailable
+  - source: live (अभी OpenStreetMap से) या local (सहेजी गई ऑफ़लाइन सूची से)
+  - data_as_of: यह डेटा कब का है (ISO समय)
+  - facilities: नाम, तरह, distance_km, पता, (कभी-कभी) फ़ोन
+- जवाब बोलते समय:
+  - सिर्फ़ 1-2 सबसे नज़दीकी सुविधाएँ सरल भाषा में बताएं — नाम, लगभग दूरी, और पता।
+    जैसे: "आपके गाँव के नज़दीक लगभग चार किलोमीटर पर एम्स अस्पताल है।"
+  - बताएं कि डेटा कहाँ से है और कब का है: live हो तो कहें "यह अभी की जानकारी है,
+    OpenStreetMap से"; local हो तो कहें "यह मेरी सहेजी गई सूची से है"।
+  - data_as_of के आधार पर ही "अभी", "आज", या "कल का डेटा" जैसा समय बताएं।
+  - status unavailable हो तो कहें: "अभी नज़दीकी सुविधाओं की जानकारी मिल नहीं पा रही है,
+    कृपया थोड़ी देर बाद फिर पूछिए।" फिर ASHA वर्कर / PHC / 108 का सुझाव दें। कभी भी
+    अपनी तरफ़ से अस्पताल का नाम, पता या फ़ोन नंबर न बनाएं।
+  - status not_found हो तो कहें कि उस इलाके में कुछ नहीं मिला, और PHC/108 का सुझाव दें।
+- गंभीर (red-flag) लक्षणों पर पहले 108/अस्पताल जाने का निर्देश दें — सुविधाएँ खोजने के
+  लिए एस्केलेशन में देर न करें।
 
 LANGUAGE (कोड-मिश्रित भाषा को संभालना)
 - उपयोगकर्ता जिस भाषा या मिश्रण में बोले — हिंदी, अंग्रेज़ी, Hinglish, या कोई अन्य
@@ -78,7 +111,8 @@ LANGUAGE (कोड-मिश्रित भाषा को संभालन
 - हमेशा सम्मानजनक "आप" का प्रयोग करें, "तुम" का नहीं।
 
 MEMORY (याददाश्त — कॉल के बीच में)
-- आपके पास तीन उपकरण हैं: lookup_caller, save_caller_info, और forget_caller।
+- आपके पास ये उपकरण हैं: lookup_caller, save_caller_info, add_note, forget_caller,
+  और find_nearby_health_facilities (TOOLS section देखें)।
 - बातचीत शुरू होते ही lookup_caller से देखें कि यह कॉलर पहले बात कर चुका है या नहीं।
 - जब कॉलर अपना नाम, उम्र, शहर/गाँव, फोन नंबर, पुरानी बीमारियाँ (conditions), चल रही
   दवाइयाँ (medications), या एलर्जी बताए — तो save_caller_info से उसे याद रखें।
@@ -107,6 +141,8 @@ STYLE
 - गर्मजोशी और धैर्य के साथ बोलें, जैसे भरोसेमंद कम्युनिटी हेल्थ वर्कर बोलता है।
 - कभी बुलेट पॉइंट, ब्रैकेट, या 20 शब्दों से लंबे वाक्य न बोलें — यह सुनने के लिए है,
   पढ़ने के लिए नहीं।
+- उपकरण से मिली सूची को कभी JSON या सूची की तरह न पढ़ें — उसे बातचीत में बदलें:
+  "एम्स, आपसे लगभग दो किलोमीटर दूर, नई दिल्ली में है।"
 """.strip()
 
 
@@ -250,6 +286,46 @@ class Assistant(Agent):
                 else "There was no saved information to erase."
             ),
         }
+
+    @function_tool
+    async def find_nearby_health_facilities(
+        self,
+        ctx: RunContext,
+        location: str,
+        facility_type: str = "hospital",
+    ) -> dict:
+        """Look up real, current health facilities (hospitals, clinics, doctors,
+        pharmacies) near an Indian village, town or district and return the
+        closest few with name, type, distance, address and phone when known.
+
+        Call this whenever the caller asks where to go for care — a nearby
+        hospital, clinic, doctor, PHC, or pharmacy — or wants to know what
+        health facilities exist in their area.  Use the caller's saved location
+        from lookup_caller if they have not just named a new one; only ask for
+        a location when neither is available.
+
+        Returns a dict with:
+        - status: "ok" (found), "not_found" (nothing near that place), or
+          "unavailable" (the data source could not be reached right now).
+        - source: "live" (just fetched from OpenStreetMap) or "local" (curated
+          offline list) — plus data_as_of, an ISO timestamp of when the data
+          is from, so you can say whether it is fresh.
+        - facilities: a list of dicts with name, type, distance_km, address
+          and phone (phone only when the source provides one).
+
+        Never invent facilities, distances, addresses or phone numbers.  If
+        status is not "ok", say the lookup could not be done right now and
+        suggest a PHC, an ASHA worker, or the 108 emergency line instead.
+
+        Args:
+            location: The caller's village, town, city or district, in any
+                Indian language (e.g. "Varanasi", "गोरखपुर", "New Delhi, India").
+            facility_type: One of "hospital" (default), "clinic", "doctor",
+                "pharmacy", or "any".
+        """
+        result = await lookup_health_facilities(location, facility_type)
+        result["caller_location"] = location
+        return result
 
 
 def prewarm(proc: JobProcess) -> None:

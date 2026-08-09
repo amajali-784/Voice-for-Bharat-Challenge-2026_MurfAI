@@ -1,3 +1,5 @@
+import json
+
 import pytest
 from livekit.agents import AgentSession, inference, llm
 
@@ -163,5 +165,79 @@ async def test_lookup_caller_info_via_tool(tmp_path) -> None:
             intent="""
             Acknowledges remembering the caller, Sunita Devi, by name and asks
             how their health is now. Friendly and brief.
+            """,
+        )
+
+
+@pytest.mark.asyncio
+async def test_finds_nearby_facility_using_saved_location(
+    tmp_path, monkeypatch
+) -> None:
+    """Day 5: when a returning caller asks for a nearby hospital, the agent
+    should call find_nearby_health_facilities and chain the location saved in
+    memory from a previous call instead of asking again."""
+    calls: list[dict] = []
+
+    async def fake_lookup(location: str, facility_type: str = "hospital") -> dict:
+        calls.append({"location": location, "facility_type": facility_type})
+        return {
+            "status": "ok",
+            "source": "live",
+            "source_detail": "OpenStreetMap",
+            "data_as_of": "2026-08-09T00:00:00Z",
+            "facilities": [
+                {
+                    "name": "Sir Sunderlal Hospital, BHU",
+                    "type": "hospital",
+                    "distance_km": 3.4,
+                    "address": "BHU Campus, Varanasi",
+                }
+            ],
+        }
+
+    monkeypatch.setattr("agent.lookup_health_facilities", fake_lookup)
+
+    store = CallerStore(db_path=str(tmp_path / "memory.db"))
+    caller_id = new_caller_id()
+    store.upsert(
+        {"caller_id": caller_id, "name": "Sunita Devi", "location": "Varanasi"}
+    )
+
+    async with (
+        _llm() as llm,
+        AgentSession(
+            llm=llm, userdata={"caller_id": caller_id, "store": store}
+        ) as session,
+    ):
+        await session.start(Assistant())
+
+        result = await session.run(
+            user_input="मुझे बताइए मेरे पास का सरकारी अस्पताल कौन सा है"
+        )
+
+        call = next(
+            (
+                e.item
+                for e in result.events
+                if e.type == "function_call"
+                and e.item.name == "find_nearby_health_facilities"
+            ),
+            None,
+        )
+        assert call is not None, (
+            "expected the agent to call find_nearby_health_facilities, got: "
+            f"{[getattr(e.item, 'name', e.type) for e in result.events]}"
+        )
+        # Chaining: the location should come from saved memory, not be re-asked.
+        location_arg = json.loads(call.arguments).get("location")
+        assert location_arg == "Varanasi"
+        assert calls and calls[-1]["location"] == "Varanasi"
+
+        await result.expect.next_event(type="message").judge(
+            llm,
+            intent="""
+            Names one nearby hospital in natural, spoken language (not JSON or a
+            bulleted list) — e.g. Sir Sunderlal Hospital at BHU in Varanasi, and
+            roughly how far away it is. Should be brief and conversational.
             """,
         )
