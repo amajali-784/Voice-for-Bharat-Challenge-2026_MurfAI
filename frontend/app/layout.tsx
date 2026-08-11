@@ -116,6 +116,14 @@ export default async function RootLayout({ children }: RootLayoutProps) {
             </Link>
 
             <div className="flex items-center gap-3">
+              <Link
+                href="/escalations"
+                className="border-border bg-card/70 text-muted-foreground hover:text-foreground hidden items-center gap-1.5 rounded-full border px-3 py-1.5 font-mono text-[10px] font-bold tracking-wider uppercase transition-colors sm:inline-flex"
+              >
+                <span className="text-sage">मानव सहायता</span>
+                <span className="opacity-40">|</span>
+                Human Help
+              </Link>
               <span className="border-border bg-card/70 text-muted-foreground hidden items-center gap-1.5 rounded-full border px-3 py-1.5 font-mono text-[10px] font-bold tracking-wider uppercase sm:inline-flex">
                 <span className="text-sage">हिंदी</span>
                 <span className="opacity-40">|</span>

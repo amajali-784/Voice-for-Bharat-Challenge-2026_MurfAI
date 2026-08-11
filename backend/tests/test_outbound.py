@@ -226,9 +226,22 @@ def test_dial_build_metadata() -> None:
     assert meta["location"] == "Varanasi"
 
 
-def test_dial_rejects_invalid_phone() -> None:
+def test_dial_normalizes_bare_linphone_username() -> None:
+    assert dial_mod.normalize_dial_target("sunita") == "sunita"
+
+
+def test_dial_strips_sip_scheme_and_domain() -> None:
+    assert dial_mod.normalize_dial_target("sip:sunita@sip.linphone.org") == "sunita"
+    assert dial_mod.normalize_dial_target("sunita@sip.linphone.org") == "sunita"
+
+
+def test_dial_keeps_e164_number() -> None:
+    assert dial_mod.normalize_dial_target("+919876543210") == "+919876543210"
+
+
+def test_dial_rejects_invalid_target() -> None:
     args = argparse.Namespace(
-        to="9876543210",
+        to="bad target!",
         name=None,
         reminder="medication",
         medication=None,

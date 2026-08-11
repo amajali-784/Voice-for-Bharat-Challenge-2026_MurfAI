@@ -103,8 +103,8 @@ Create `.env.local` in both `backend/` and `frontend/` (copy from `.env.example`
 | `GOOGLE_API_KEY` (or `OPENAI_API_KEY`) | Google AI Studio (Gemini is the default LLM here)         | Yes      |
 | `MEMORY_API_PORT` / `MEMORY_API_HOST`  | Optional — admin API port/host (default `8700`, `127.0.0.1`) | No |
 | `NEXT_PUBLIC_MEMORY_API_URL`           | Frontend only — admin API base URL (default `http://localhost:8700`) | No |
-| `LIVEKIT_SIP_OUTBOUND_TRUNK_ID`        | `lk sip outbound create` (Twilio Elastic SIP Trunk) — Day 6 | Only for outbound |
-| `TWILIO_PHONE_NUMBER`                  | Your Twilio number, used as caller ID (Day 6) | Only for outbound |
+| `LIVEKIT_SIP_OUTBOUND_TRUNK_ID`        | LiveKit Cloud → SIP Trunks (Linphone: `sip.linphone.org`, TLS) — Day 6 | Only for outbound |
+| `LINPHONE_DOMAIN`                      | SIP server for bare-username dialing (default `sip.linphone.org`, Day 6) | Only for outbound |
 
 > ⚠️ `LIVEKIT_URL` must be your **actual** project URL (e.g. `wss://my-app-ab12cd34.livekit.cloud`), not the `your-project.livekit.cloud` placeholder from `.env.example`.
 
@@ -164,12 +164,12 @@ on how the person is doing, chained to the Day 4 caller memory and the Day 5
 facility lookup.
 
 ```
-dial.py --to +919876543210
-  → LiveKit: create room + dispatch (phone + reminder metadata)
+dial.py --to sunita
+  → LiveKit: create room + dispatch (sip:sunita@sip.linphone.org + reminder metadata)
     → health-reminder-agent worker (backend/src/telephony/outbound/)
       → session.start() (models warm up while it rings)
-        → create_sip_participant (LiveKit outbound trunk → Twilio → PSTN)
-          → phone rings → person answers
+        → create_sip_participant (LiveKit outbound trunk → sip.linphone.org, TLS)
+          → Linphone app rings → you answer
             → agent speaks the opening (who / why / opt-out)
               → reminder conversation → opt_out or end_call
 ```
@@ -181,14 +181,17 @@ dial.py --to +919876543210
   The **opening is spoken deterministically** — who is calling, why, and how to
   stop the calls — so it can never be skipped by the LLM.
 - **`backend/src/telephony/outbound/dial.py`** — the trigger: a CLI that creates
-  a room and dispatches the worker with the number + reminder metadata.
+  a room and dispatches the worker with the SIP address + reminder metadata.
 - **`backend/src/telephony/outbound/outcome.py`** — maps SIP call status to an
   outcome (`answered`, `no_answer`, `busy`, `declined`, `voicemail`,
   `opted_out`, …), applies the retry rule (no_answer/busy/trunk_failure retried
   once after 10 min), and appends a JSON line per attempt to
   `backend/logs/outcomes.jsonl`.
-- **Setup:** Twilio **Elastic SIP Trunk** → LiveKit **outbound trunk**
-  (`lk sip outbound create --address <your-trunk>.pstn.twilio.com --number <Twilio number>`).
+- **Setup:** free **Linphone** account (`sip:<username>@sip.linphone.org`) →
+  install the Linphone app (turn **Media encryption mandatory** OFF) → create a
+  **LiveKit outbound trunk** with `address=sip.linphone.org`,
+  `transport=SIP_TRANSPORT_TLS`, `numbers=["*"]` (the editor only accepts E.164
+  numbers, so use the wildcard and set `SIP_FROM_NUMBER` per call).
   Full steps in `backend/src/telephony/outbound/README.md`.
 
 ### Run an outbound call
@@ -196,11 +199,52 @@ dial.py --to +919876543210
 ```bash
 cd backend
 uv run python src/telephony/outbound/agent.py dev        # Terminal 1 — worker
-uv run python src/telephony/outbound/dial.py --to +919876543210   # Terminal 2 — dial
+uv run python src/telephony/outbound/dial.py --to sunita # Terminal 2 — dial your Linphone account
 ```
 
-Requires `LIVEKIT_SIP_OUTBOUND_TRUNK_ID` (+ optional `TWILIO_PHONE_NUMBER`
-caller ID, `SIP_RINGING_TIMEOUT`) in `backend/.env.local`.
+Requires `LIVEKIT_SIP_OUTBOUND_TRUNK_ID` (+ optional `LINPHONE_DOMAIN`,
+`SIP_FROM_NUMBER` caller ID, `SIP_RINGING_TIMEOUT`) in `backend/.env.local`.
+
+---
+
+## Day 7 — Know when to ask a human for help
+
+The agent stops trying to solve everything alone. For the Health Access track it
+files a **human-help request** in exactly two situations: a **red-flag symptom**
+(chest pain, trouble breathing, fainting, heavy bleeding, stroke-like weakness,
+a dangerously drowsy child, self-harm thoughts) and a **diagnosis request**
+("what disease do I have?"). It asks the caller's **permission first**, stores a
+**short, sanitised summary** (no phone numbers / OTPs / PINs / account numbers),
+gives the caller a **reference ID** (`ESC-XXXXXX`) and an honest next step, and
+**never duplicates** an already-open request.
+
+- **`backend/src/escalation.py`** — `EscalationStore` (SQLite, WAL). Each request
+  keeps: who (caller name + id), what happened, what the agent already checked,
+  urgency (`low`/`medium`/`high`/`emergency`), the caller's language and preferred
+  follow-up, and a status (`open` → `in_progress` → `resolved`). `sanitize_summary()`
+  scrubs private digit runs and secret words as a second line of defence.
+- **Agent tool `create_escalation`** — a `@function_tool` on `Assistant` in `agent.py`,
+  gated on `caller_consent=True`. The `ESCALATION` section of the system prompt
+  tells the agent when to offer it, that it must ask permission, and to keep the
+  summary short and private.
+- **`backend/src/escalation_api.py`** — stdlib admin API on **`127.0.0.1:8701`**
+  (`GET /escalations`, `PATCH /escalations/<ref>` to move status) powering the
+  **`/escalations`** dashboard page in the frontend.
+- **Dashboard** — `frontend/app/escalations/page.tsx` lists open requests
+  (emergency first), shows urgency badges and status, and lets a worker mark a
+  request `in_progress` / `resolved`.
+
+```bash
+cd backend
+uv run python src/agent.py dev        # Terminal 1 — agent
+uv run python src/escalation_api.py    # Terminal 2 — dashboard API
+cd ../frontend && pnpm dev             # Terminal 3 — UI (open /escalations)
+```
+
+Try: *"मेरे सीने में दर्द है और साँस लेने में तकलीफ़ है"* → agent says go to
+hospital / call 108, asks permission, files the request, reads back the reference
+ID. Say *"नहीं"* and nothing is filed. Ask *"मुझे कौन-सी बीमारी है?"* for the
+diagnosis-request path. A routine *"हल्का बुखार है"* call never escalates.
 
 ---
 

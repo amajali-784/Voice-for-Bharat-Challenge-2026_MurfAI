@@ -13,11 +13,10 @@ takes over, plus an opt_out tool that records the request in memory.
 Flow
 ----
 worker (`uv run python src/telephony/outbound/agent.py dev`)
-  <- dispatched by `dial.py --to +919876543210`
-  -> reads phone_number from job metadata
-  -> dials via LiveKit SIP (outbound trunk -> Twilio -> PSTN) — or, when the
-     metadata carries `"connector": true`, via the Twilio bridge (twilio_bridge.py)
-     using the LiveKit Twilio Connector, which works on a free Twilio trial
+  <- dispatched by `dial.py --to sunita` (any Linphone username)
+  -> reads phone_number from job metadata (a sip: URI or an E.164 number)
+  -> dials via LiveKit SIP (outbound trunk -> sip.linphone.org, TLS)
+     -> the Linphone app on the person's phone rings
   -> speaks the opening, then runs the reminder conversation
   -> records the outcome (answered / no_answer / busy / voicemail / opted_out)
 """
@@ -27,8 +26,9 @@ import contextlib
 import json
 import logging
 import os
+import re
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 # Script-mode bootstrap.  Running `python src/telephony/outbound/agent.py`
@@ -79,12 +79,25 @@ load_dotenv(
 # One shared store, same as the inbound worker.
 MEMORY_STORE = CallerStore(DEFAULT_DB_PATH)
 
-# Required — create with `lk sip outbound create` (see README.md for Twilio setup).
+# Required — the LiveKit outbound trunk that routes to sip.linphone.org.
+# Create it in the LiveKit Cloud console (Telephony -> SIP Trunks) or with the
+# LiveKit CLI; see README.md for the Linphone setup.
 OUTBOUND_TRUNK_ID = os.getenv("LIVEKIT_SIP_OUTBOUND_TRUNK_ID")
 
-# Caller ID shown to the person we dial (a Twilio number). Optional — if unset,
+# Optional caller ID (a SIP identity) shown to the person we dial. If unset,
 # the number(s) configured on the LiveKit trunk are used.
-FROM_NUMBER = os.getenv("TWILIO_PHONE_NUMBER")
+# LiveKit validates the From header like the dial target — a phone number or
+# bare SIP user, NOT a full sip: URI or even user@host — so reduce any pasted
+# value down to the bare user part (LiveKit appends the trunk's domain).
+FROM_NUMBER = os.getenv("SIP_FROM_NUMBER")
+if FROM_NUMBER:
+    raw = FROM_NUMBER.strip()
+    scheme = re.match(r"^(?:sips?):(.+)$", raw, re.IGNORECASE)
+    if scheme:
+        raw = scheme.group(1).strip()
+    if "@" in raw:
+        raw = raw.split("@", 1)[0]
+    FROM_NUMBER = raw.strip()
 
 # How long to let the phone ring before giving up (seconds).
 RINGING_TIMEOUT = int(os.getenv("SIP_RINGING_TIMEOUT", "30"))
@@ -286,35 +299,6 @@ def prewarm(proc: JobProcess) -> None:
     proc.userdata["vad"] = silero.VAD.load()
 
 
-async def _wait_connector_audio(
-    ctx: JobContext, timeout: float, identity: str
-) -> bool:
-    """Wait for the Twilio connector participant to publish audio.
-
-    The connector joins the room as a hidden participant as soon as the call is
-    placed and only publishes an audio track once the phone call is answered —
-    so this event is the "call connected" signal for connector-mode calls.
-    """
-    answered = asyncio.Event()
-
-    def _on_track_published(
-        publication: rtc.RemoteTrackPublication,
-        participant: rtc.RemoteParticipant,
-    ) -> None:
-        if (
-            participant.identity == identity
-            and publication.kind == rtc.TrackKind.KIND_AUDIO
-        ):
-            answered.set()
-
-    ctx.room.on("track_published", _on_track_published)
-    try:
-        await asyncio.wait_for(answered.wait(), timeout=timeout)
-        return True
-    except asyncio.TimeoutError:
-        return False
-
-
 async def entrypoint(ctx: JobContext):
     meta = parse_metadata(ctx.job.metadata)
     if meta is None:
@@ -322,9 +306,7 @@ async def entrypoint(ctx: JobContext):
         ctx.shutdown()
         return
 
-    is_connector = bool(meta.get("connector"))
-
-    if not OUTBOUND_TRUNK_ID and not is_connector:
+    if not OUTBOUND_TRUNK_ID:
         logger.error("LIVEKIT_SIP_OUTBOUND_TRUNK_ID is not set — cannot place calls")
         ctx.shutdown()
         return
@@ -421,80 +403,44 @@ async def entrypoint(ctx: JobContext):
         "participant_identity": CALLEE_IDENTITY,
         "participant_name": name or "Phone user",
         "wait_until_answered": True,
-        "ringing_timeout": RINGING_TIMEOUT,
+        "ringing_timeout": timedelta(seconds=RINGING_TIMEOUT),
     }
     if FROM_NUMBER:
         dial_kwargs["sip_number"] = FROM_NUMBER
 
     logger.info("dialing %s in room %s", phone_number, room_name)
-    if is_connector:
-        # The Twilio bridge (twilio_bridge.py) already dials the number. The
-        # call is "answered" when the connector participant publishes audio.
+    try:
+        # wait_until_answered means this returns once the call connects — if the
+        # line is busy, declines, or never answers, it raises instead.
+        await ctx.api.sip.create_sip_participant(
+            api.CreateSIPParticipantRequest(**dial_kwargs)
+        )
+    except api.TwirpError as e:
+        status_code = _sip_status_from_error(e)
+        outcome = classify_sip_status(status_code)
+        detail = f"sip_status={status_code} {e.message}"
+        entry = build_outcome(
+            phone_number=phone_number,
+            room_name=room_name,
+            name=name,
+            outcome=outcome,
+            detail=detail,
+            attempt=attempt,
+        )
+        log_outcome(entry)
+        retry, reason = should_retry(outcome, attempt)
         logger.info(
-            "connector call to %s: waiting for answer in room %s",
+            "call to %s failed: %s (%s) — retry=%s (%s)",
             phone_number,
-            room_name,
+            outcome,
+            detail,
+            retry,
+            reason,
         )
-        answered = await _wait_connector_audio(
-            ctx, RINGING_TIMEOUT, CALLEE_IDENTITY
-        )
-        if not answered:
-            outcome = "no_answer"
-            detail = "connector participant never published audio"
-            entry = build_outcome(
-                phone_number=phone_number,
-                room_name=room_name,
-                name=name,
-                outcome=outcome,
-                detail=detail,
-                attempt=attempt,
-            )
-            log_outcome(entry)
-            retry, reason = should_retry(outcome, attempt)
-            logger.info(
-                "call to %s not answered (%s) — retry=%s (%s)",
-                phone_number,
-                detail,
-                retry,
-                reason,
-            )
-            with contextlib.suppress(Exception):
-                session_started.cancel()
-            ctx.shutdown()
-            return
-    else:
-        try:
-            # wait_until_answered means this returns once the call connects — if the
-            # number is busy, declines, or never answers, it raises instead.
-            await ctx.api.sip.create_sip_participant(
-                api.CreateSIPParticipantRequest(**dial_kwargs)
-            )
-        except api.TwirpError as e:
-            status_code = _sip_status_from_error(e)
-            outcome = classify_sip_status(status_code)
-            detail = f"sip_status={status_code} {e.message}"
-            entry = build_outcome(
-                phone_number=phone_number,
-                room_name=room_name,
-                name=name,
-                outcome=outcome,
-                detail=detail,
-                attempt=attempt,
-            )
-            log_outcome(entry)
-            retry, reason = should_retry(outcome, attempt)
-            logger.info(
-                "call to %s failed: %s (%s) — retry=%s (%s)",
-                phone_number,
-                outcome,
-                detail,
-                retry,
-                reason,
-            )
-            with contextlib.suppress(Exception):
-                session_started.cancel()
-            ctx.shutdown()
-            return
+        with contextlib.suppress(Exception):
+            session_started.cancel()
+        ctx.shutdown()
+        return
 
     await session_started
     logger.info("call answered: %s", phone_number)

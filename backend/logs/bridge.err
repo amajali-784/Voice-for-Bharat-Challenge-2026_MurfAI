@@ -1,1 +1,2 @@
 INFO:twilio-bridge:Twilio bridge listening on http://127.0.0.1:8899 (public base: http://127.0.0.1:8899)
+INFO:twilio-bridge:127.0.0.1 - "POST /place HTTP/1.1" 400 -

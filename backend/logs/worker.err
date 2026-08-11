@@ -1,0 +1,785 @@
+INFO:livekit:livekit_ffi::server:151:livekit_ffi::server - initializing ffi server v0.12.48
+INFO:livekit:livekit_ffi::cabi:50:livekit_ffi::cabi - initializing ffi server v0.12.48
+DEBUG:asyncio:Using proactor: IocpProactor
+DEV:livekit.agents:Watching C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\src\telephony\outbound
+INFO:livekit:livekit_ffi::server:151:livekit_ffi::server - initializing ffi server v0.12.48
+DEBUG:asyncio:Using proactor: IocpProactor
+INFO:livekit.agents:starting worker
+INFO:livekit.agents:starting inference executor
+INFO:livekit.agents:initializing process
+INFO:livekit.agents:process initialized
+INFO:livekit.agents:HTTP server listening on :49845
+INFO:livekit.agents:registered worker
+Process agents_inference_process:
+Traceback (most recent call last):
+  File "C:\Python314\Lib\asyncio\windows_events.py", line 463, in finish_socket_func
+    return ov.getresult()
+           ~~~~~~~~~~~~^^
+OSError: [WinError 64] The specified network name is no longer available
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\utils\aio\duplex_unix.py", line 57, in aclose
+    await self._writer.wait_closed()
+  File "C:\Python314\Lib\asyncio\streams.py", line 358, in wait_closed
+    await self._protocol._get_close_waiter(self)
+  File "C:\Python314\Lib\asyncio\proactor_events.py", line 286, in _loop_reading
+    length = fut.result()
+  File "C:\Python314\Lib\asyncio\windows_events.py", line 804, in _poll
+    value = callback(transferred, key, ov)
+  File "C:\Python314\Lib\asyncio\windows_events.py", line 467, in finish_socket_func
+    raise ConnectionResetError(*exc.args)
+ConnectionResetError: [WinError 64] The specified network name is no longer available
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Python314\Lib\multiprocessing\process.py", line 320, in _bootstrap
+    self.run()
+    ~~~~~~~~^^
+  File "C:\Python314\Lib\multiprocessing\process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\ipc\inference_proc_lazy_main.py", line 50, in proc_main
+    client.run()
+    ~~~~~~~~~~^^
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\ipc\proc_client.py", line 70, in run
+    loop.run_until_complete(self._task)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "C:\Python314\Lib\asyncio\base_events.py", line 719, in run_until_complete
+    return future.result()
+           ~~~~~~~~~~~~~^^
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\ipc\proc_client.py", line 145, in _monitor_task
+    await self._acch.aclose()
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\utils\aio\duplex_unix.py", line 60, in aclose
+    raise DuplexClosed() from e
+livekit.agents.utils.aio.duplex_unix.DuplexClosed
+INFO:livekit:livekit_ffi::server:151:livekit_ffi::server - initializing ffi server v0.12.48
+INFO:livekit:livekit_ffi::cabi:50:livekit_ffi::cabi - initializing ffi server v0.12.48
+DEBUG:asyncio:Using proactor: IocpProactor
+INFO:livekit.agents:starting worker
+INFO:livekit.agents:starting inference executor
+INFO:livekit.agents:initializing process
+ERROR:livekit.agents:Error in _read_ipc_task
+Traceback (most recent call last):
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\utils\aio\duplex_unix.py", line 35, in recv_bytes
+    len_bytes = await self._reader.readexactly(4)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\asyncio\streams.py", line 767, in readexactly
+    raise exceptions.IncompleteReadError(incomplete, n)
+asyncio.exceptions.IncompleteReadError: 0 bytes read on a total of 4 expected bytes
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\utils\log.py", line 17, in async_fn_logs
+    return await fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\cli\watcher.py", line 136, in _read_ipc_task
+    msg = await channel.arecv_message(self._pch, proto.IPC_MESSAGES)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\ipc\channel.py", line 47, in arecv_message
+    return _read_message(await dplx.recv_bytes(), messages)
+                         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\utils\aio\duplex_unix.py", line 43, in recv_bytes
+    raise DuplexClosed() from e
+livekit.agents.utils.aio.duplex_unix.DuplexClosed
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    from multiprocessing.spawn import spawn_main; spawn_main(parent_pid=35020, pipe_handle=1636)
+                                                  ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\multiprocessing\spawn.py", line 122, in spawn_main
+    exitcode = _main(fd, parent_sentinel)
+  File "C:\Python314\Lib\multiprocessing\spawn.py", line 132, in _main
+    self = reduction.pickle.load(from_parent)
+  File "C:\Python314\Lib\multiprocessing\reduction.py", line 238, in _rebuild_socket
+    return ds.detach()
+           ~~~~~~~~~^^
+  File "C:\Python314\Lib\multiprocessing\resource_sharer.py", line 38, in detach
+    with _resource_sharer.get_connection(self._id) as conn:
+         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Python314\Lib\multiprocessing\resource_sharer.py", line 86, in get_connection
+    c = Client(address, authkey=process.current_process().authkey)
+  File "C:\Python314\Lib\multiprocessing\connection.py", line 534, in Client
+    c = PipeClient(address)
+  File "C:\Python314\Lib\multiprocessing\connection.py", line 736, in PipeClient
+    _winapi.WaitNamedPipe(address, 1000)
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+FileNotFoundError: [WinError 2] The system cannot find the file specified
+INFO:livekit:livekit_ffi::server:151:livekit_ffi::server - initializing ffi server v0.12.48
+DEBUG:asyncio:Using proactor: IocpProactor
+INFO:livekit.agents:starting worker
+INFO:livekit.agents:starting inference executor
+INFO:livekit.agents:initializing process
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    from multiprocessing.spawn import spawn_main; spawn_main(parent_pid=29884, pipe_handle=1312)
+                                                  ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\multiprocessing\spawn.py", line 122, in spawn_main
+    exitcode = _main(fd, parent_sentinel)
+  File "C:\Python314\Lib\multiprocessing\spawn.py", line 132, in _main
+    self = reduction.pickle.load(from_parent)
+  File "C:\Python314\Lib\multiprocessing\reduction.py", line 238, in _rebuild_socket
+    return ds.detach()
+           ~~~~~~~~~^^
+  File "C:\Python314\Lib\multiprocessing\resource_sharer.py", line 38, in detach
+    with _resource_sharer.get_connection(self._id) as conn:
+         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Python314\Lib\multiprocessing\resource_sharer.py", line 86, in get_connection
+    c = Client(address, authkey=process.current_process().authkey)
+  File "C:\Python314\Lib\multiprocessing\connection.py", line 534, in Client
+    c = PipeClient(address)
+  File "C:\Python314\Lib\multiprocessing\connection.py", line 736, in PipeClient
+    _winapi.WaitNamedPipe(address, 1000)
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+FileNotFoundError: [WinError 2] The system cannot find the file specified
+INFO:livekit:livekit_ffi::server:151:livekit_ffi::server - initializing ffi server v0.12.48
+DEBUG:asyncio:Using proactor: IocpProactor
+INFO:livekit.agents:starting worker
+INFO:livekit.agents:starting inference executor
+INFO:livekit.agents:initializing process
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    from multiprocessing.spawn import spawn_main; spawn_main(parent_pid=28332, pipe_handle=1212)
+                                                  ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\multiprocessing\spawn.py", line 122, in spawn_main
+    exitcode = _main(fd, parent_sentinel)
+  File "C:\Python314\Lib\multiprocessing\spawn.py", line 132, in _main
+    self = reduction.pickle.load(from_parent)
+  File "C:\Python314\Lib\multiprocessing\reduction.py", line 238, in _rebuild_socket
+    return ds.detach()
+           ~~~~~~~~~^^
+  File "C:\Python314\Lib\multiprocessing\resource_sharer.py", line 38, in detach
+    with _resource_sharer.get_connection(self._id) as conn:
+         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Python314\Lib\multiprocessing\resource_sharer.py", line 86, in get_connection
+    c = Client(address, authkey=process.current_process().authkey)
+  File "C:\Python314\Lib\multiprocessing\connection.py", line 534, in Client
+    c = PipeClient(address)
+  File "C:\Python314\Lib\multiprocessing\connection.py", line 736, in PipeClient
+    _winapi.WaitNamedPipe(address, 1000)
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+FileNotFoundError: [WinError 2] The system cannot find the file specified
+INFO:livekit:livekit_ffi::server:151:livekit_ffi::server - initializing ffi server v0.12.48
+DEBUG:asyncio:Using proactor: IocpProactor
+INFO:livekit.agents:starting worker
+INFO:livekit.agents:starting inference executor
+INFO:livekit.agents:initializing process
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    from multiprocessing.spawn import spawn_main; spawn_main(parent_pid=29448, pipe_handle=1896)
+                                                  ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\multiprocessing\spawn.py", line 122, in spawn_main
+    exitcode = _main(fd, parent_sentinel)
+  File "C:\Python314\Lib\multiprocessing\spawn.py", line 131, in _main
+    prepare(preparation_data)
+    ~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\multiprocessing\spawn.py", line 246, in prepare
+    _fixup_main_from_path(data['init_main_from_path'])
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\multiprocessing\spawn.py", line 297, in _fixup_main_from_path
+    main_content = runpy.run_path(main_path,
+                                  run_name="__mp_main__")
+  File "<frozen runpy>", line 286, in run_path
+  File "<frozen runpy>", line 259, in _get_code_from_file
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\src\telephony\outbound\agent.py", line 428
+    with contextlib.suppress(Exception):
+IndentationError: unexpected indent
+WARNING:watchfiles.main:process already dead, exit code: 1
+INFO:livekit:livekit_ffi::server:151:livekit_ffi::server - initializing ffi server v0.12.48
+DEBUG:asyncio:Using proactor: IocpProactor
+INFO:livekit.agents:starting worker
+INFO:livekit.agents:starting inference executor
+INFO:livekit.agents:initializing process
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    from multiprocessing.spawn import spawn_main; spawn_main(parent_pid=25076, pipe_handle=1312)
+                                                  ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\multiprocessing\spawn.py", line 122, in spawn_main
+    exitcode = _main(fd, parent_sentinel)
+  File "C:\Python314\Lib\multiprocessing\spawn.py", line 132, in _main
+    self = reduction.pickle.load(from_parent)
+  File "C:\Python314\Lib\multiprocessing\reduction.py", line 238, in _rebuild_socket
+    return ds.detach()
+           ~~~~~~~~~^^
+  File "C:\Python314\Lib\multiprocessing\resource_sharer.py", line 38, in detach
+    with _resource_sharer.get_connection(self._id) as conn:
+         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Python314\Lib\multiprocessing\resource_sharer.py", line 86, in get_connection
+    c = Client(address, authkey=process.current_process().authkey)
+  File "C:\Python314\Lib\multiprocessing\connection.py", line 534, in Client
+    c = PipeClient(address)
+  File "C:\Python314\Lib\multiprocessing\connection.py", line 736, in PipeClient
+    _winapi.WaitNamedPipe(address, 1000)
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+FileNotFoundError: [WinError 2] The system cannot find the file specified
+INFO:livekit:livekit_ffi::server:151:livekit_ffi::server - initializing ffi server v0.12.48
+INFO:livekit:livekit_ffi::cabi:50:livekit_ffi::cabi - initializing ffi server v0.12.48
+DEBUG:asyncio:Using proactor: IocpProactor
+INFO:livekit.agents:starting worker
+INFO:livekit.agents:starting inference executor
+INFO:livekit.agents:initializing process
+INFO:livekit.agents:process initialized
+INFO:livekit.agents:HTTP server listening on :59404
+INFO:livekit.agents:registered worker
+Process agents_inference_process:
+Traceback (most recent call last):
+  File "C:\Python314\Lib\asyncio\windows_events.py", line 463, in finish_socket_func
+    return ov.getresult()
+           ~~~~~~~~~~~~^^
+OSError: [WinError 64] The specified network name is no longer available
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\utils\aio\duplex_unix.py", line 57, in aclose
+    await self._writer.wait_closed()
+  File "C:\Python314\Lib\asyncio\streams.py", line 358, in wait_closed
+    await self._protocol._get_close_waiter(self)
+  File "C:\Python314\Lib\asyncio\proactor_events.py", line 286, in _loop_reading
+    length = fut.result()
+  File "C:\Python314\Lib\asyncio\windows_events.py", line 804, in _poll
+    value = callback(transferred, key, ov)
+  File "C:\Python314\Lib\asyncio\windows_events.py", line 467, in finish_socket_func
+    raise ConnectionResetError(*exc.args)
+ConnectionResetError: [WinError 64] The specified network name is no longer available
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Python314\Lib\multiprocessing\process.py", line 320, in _bootstrap
+    self.run()
+    ~~~~~~~~^^
+  File "C:\Python314\Lib\multiprocessing\process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\ipc\inference_proc_lazy_main.py", line 50, in proc_main
+    client.run()
+    ~~~~~~~~~~^^
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\ipc\proc_client.py", line 70, in run
+    loop.run_until_complete(self._task)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "C:\Python314\Lib\asyncio\base_events.py", line 719, in run_until_complete
+    return future.result()
+           ~~~~~~~~~~~~~^^
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\ipc\proc_client.py", line 145, in _monitor_task
+    await self._acch.aclose()
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\utils\aio\duplex_unix.py", line 60, in aclose
+    raise DuplexClosed() from e
+livekit.agents.utils.aio.duplex_unix.DuplexClosed
+INFO:livekit:livekit_ffi::server:151:livekit_ffi::server - initializing ffi server v0.12.48
+DEBUG:asyncio:Using proactor: IocpProactor
+INFO:livekit.agents:starting worker
+INFO:livekit.agents:starting inference executor
+INFO:livekit.agents:initializing process
+INFO:livekit.agents:process initialized
+INFO:livekit.agents:HTTP server listening on :51981
+INFO:livekit.agents:registered worker
+WARNING:livekit.agents:unexpected message type: 258
+WARNING:livekit.agents:failed to connect to livekit, retrying in 0s
+Traceback (most recent call last):
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\worker.py", line 1011, in _connection_task
+    await self._run_ws(ws)
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\worker.py", line 1093, in _run_ws
+    await asyncio.gather(*tasks)
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\worker.py", line 1065, in _recv_task
+    raise Exception("worker connection closed unexpectedly")
+Exception: worker connection closed unexpectedly
+INFO:livekit.agents:registered worker
+INFO:livekit.agents:received job request
+DEBUG:livekit.agents:received assignment
+WARNING:livekit.agents:no warmed process available for job, waiting for one to be created
+INFO:livekit.agents:initializing job runner
+DEBUG:asyncio:Using proactor: IocpProactor
+INFO:livekit.agents:job runner initialized
+INFO:health-reminder-outbound:dialing sip:amajali7849251@sip.linphone.org in room outbound-6590e902
+DEBUG:livekit.agents:http_session(): creating a new httpclient ctx
+DEBUG:livekit.agents:configuring session recording
+DEBUG:livekit.agents:input stream attached
+DEBUG:livekit.agents:input stream detached
+DEBUG:livekit.agents:input stream attached
+ERROR:livekit.agents:unhandled exception while running the job task
+Traceback (most recent call last):
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\google\protobuf\internal\well_known_types.py", line 450, in FromTimedelta
+    td.seconds + td.days * _SECONDS_PER_DAY,
+    ^^^^^^^^^^
+AttributeError: 'int' object has no attribute 'seconds'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\opentelemetry\util\_decorator.py", line 71, in async_wrapper
+    return await func(*args, **kwargs)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\ipc\job_proc_lazy_main.py", line 306, in _traceable_entrypoint
+    await self._job_entrypoint_fnc(job_ctx)
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\src\telephony\outbound\agent.py", line 404, in entrypoint
+    api.CreateSIPParticipantRequest(**dial_kwargs)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\google\protobuf\internal\well_known_types.py", line 460, in _internal_assign
+    self.FromTimedelta(td)
+    ~~~~~~~~~~~~~~~~~~^^^^
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\google\protobuf\internal\well_known_types.py", line 454, in FromTimedelta
+    raise AttributeError(
+    ...<2 lines>...
+    ) from e
+AttributeError: Fail to convert to Duration. Expected a timedelta like object got int: 'int' object has no attribute 'seconds'
+DEBUG:livekit.agents:using audio io: `RoomIO` -> `RecorderIO` -> `AgentSession` -> `RecorderIO` -> `TranscriptSynchronizer` -> `RoomIO`
+DEBUG:livekit.agents:using transcript io: `AgentSession` -> `TranscriptSynchronizer` -> `RoomIO`
+DEBUG:livekit.agents:input stream detached
+DEBUG:livekit.plugins.deepgram:Established new Deepgram STT WebSocket connection:
+DEBUG:livekit.agents:session closed
+DEBUG:livekit.agents:uploading session report to LiveKit Cloud
+DEBUG:livekit.agents:finished uploading
+DEBUG:livekit.agents:shutting down job task
+DEBUG:livekit.agents:job exiting
+DEBUG:livekit.agents:shutting down telemetry tracer provider
+DEBUG:livekit.agents:http_session(): closing the httpclient ctx
+Process agents_inference_process:
+Traceback (most recent call last):
+  File "C:\Python314\Lib\asyncio\windows_events.py", line 463, in finish_socket_func
+    return ov.getresult()
+           ~~~~~~~~~~~~^^
+OSError: [WinError 64] The specified network name is no longer available
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\utils\aio\duplex_unix.py", line 57, in aclose
+    await self._writer.wait_closed()
+  File "C:\Python314\Lib\asyncio\streams.py", line 358, in wait_closed
+    await self._protocol._get_close_waiter(self)
+  File "C:\Python314\Lib\asyncio\proactor_events.py", line 286, in _loop_reading
+    length = fut.result()
+  File "C:\Python314\Lib\asyncio\windows_events.py", line 804, in _poll
+    value = callback(transferred, key, ov)
+  File "C:\Python314\Lib\asyncio\windows_events.py", line 467, in finish_socket_func
+    raise ConnectionResetError(*exc.args)
+ConnectionResetError: [WinError 64] The specified network name is no longer available
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Python314\Lib\multiprocessing\process.py", line 320, in _bootstrap
+    self.run()
+    ~~~~~~~~^^
+  File "C:\Python314\Lib\multiprocessing\process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\ipc\inference_proc_lazy_main.py", line 50, in proc_main
+    client.run()
+    ~~~~~~~~~~^^
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\ipc\proc_client.py", line 70, in run
+    loop.run_until_complete(self._task)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "C:\Python314\Lib\asyncio\base_events.py", line 719, in run_until_complete
+    return future.result()
+           ~~~~~~~~~~~~~^^
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\ipc\proc_client.py", line 145, in _monitor_task
+    await self._acch.aclose()
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\utils\aio\duplex_unix.py", line 60, in aclose
+    raise DuplexClosed() from e
+livekit.agents.utils.aio.duplex_unix.DuplexClosed
+INFO:livekit:livekit_ffi::server:151:livekit_ffi::server - initializing ffi server v0.12.48
+INFO:livekit:livekit_ffi::cabi:50:livekit_ffi::cabi - initializing ffi server v0.12.48
+DEBUG:asyncio:Using proactor: IocpProactor
+INFO:livekit.agents:starting worker
+INFO:livekit.agents:starting inference executor
+INFO:livekit.agents:initializing process
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    from multiprocessing.spawn import spawn_main; spawn_main(parent_pid=4636, pipe_handle=1308)
+                                                  ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\multiprocessing\spawn.py", line 122, in spawn_main
+    exitcode = _main(fd, parent_sentinel)
+  File "C:\Python314\Lib\multiprocessing\spawn.py", line 132, in _main
+    self = reduction.pickle.load(from_parent)
+  File "C:\Python314\Lib\multiprocessing\reduction.py", line 238, in _rebuild_socket
+    return ds.detach()
+           ~~~~~~~~~^^
+  File "C:\Python314\Lib\multiprocessing\resource_sharer.py", line 38, in detach
+    with _resource_sharer.get_connection(self._id) as conn:
+         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Python314\Lib\multiprocessing\resource_sharer.py", line 86, in get_connection
+    c = Client(address, authkey=process.current_process().authkey)
+  File "C:\Python314\Lib\multiprocessing\connection.py", line 534, in Client
+    c = PipeClient(address)
+  File "C:\Python314\Lib\multiprocessing\connection.py", line 736, in PipeClient
+    _winapi.WaitNamedPipe(address, 1000)
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+FileNotFoundError: [WinError 2] The system cannot find the file specified
+INFO:livekit:livekit_ffi::server:151:livekit_ffi::server - initializing ffi server v0.12.48
+DEBUG:asyncio:Using proactor: IocpProactor
+INFO:livekit.agents:starting worker
+INFO:livekit.agents:starting inference executor
+INFO:livekit.agents:initializing process
+INFO:livekit.agents:process initialized
+INFO:livekit.agents:HTTP server listening on :54160
+INFO:livekit.agents:registered worker
+INFO:livekit.agents:received job request
+DEBUG:livekit.agents:received assignment
+WARNING:livekit.agents:no warmed process available for job, waiting for one to be created
+INFO:livekit.agents:initializing job runner
+DEBUG:asyncio:Using proactor: IocpProactor
+INFO:livekit.agents:job runner initialized
+INFO:health-reminder-outbound:dialing sip:amajali7849251@sip.linphone.org in room outbound-4ad95893
+DEBUG:livekit.agents:http_session(): creating a new httpclient ctx
+DEBUG:livekit.agents:configuring session recording
+DEBUG:livekit.agents:input stream attached
+DEBUG:livekit.agents:input stream detached
+DEBUG:livekit.agents:input stream attached
+DEBUG:livekit.agents:using audio io: `RoomIO` -> `RecorderIO` -> `AgentSession` -> `RecorderIO` -> `TranscriptSynchronizer` -> `RoomIO`
+DEBUG:livekit.agents:using transcript io: `AgentSession` -> `TranscriptSynchronizer` -> `RoomIO`
+INFO:health-reminder-outbound:call to sip:amajali7849251@sip.linphone.org failed: unknown (sip_status=0 SipCallTo should be a phone number or SIP user, not a full SIP URI) — retry=False ('unknown' is not retryable)
+DEBUG:livekit.agents:input stream detached
+DEBUG:livekit.plugins.deepgram:Established new Deepgram STT WebSocket connection:
+DEBUG:livekit.agents:session closed
+DEBUG:livekit.agents:uploading session report to LiveKit Cloud
+DEBUG:livekit.agents:finished uploading
+DEBUG:livekit.agents:shutting down job task
+DEBUG:livekit.agents:job exiting
+DEBUG:livekit.agents:shutting down telemetry tracer provider
+DEBUG:livekit.agents:http_session(): closing the httpclient ctx
+Process agents_inference_process:
+Traceback (most recent call last):
+  File "C:\Python314\Lib\asyncio\windows_events.py", line 463, in finish_socket_func
+    return ov.getresult()
+           ~~~~~~~~~~~~^^
+OSError: [WinError 64] The specified network name is no longer available
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\utils\aio\duplex_unix.py", line 57, in aclose
+    await self._writer.wait_closed()
+  File "C:\Python314\Lib\asyncio\streams.py", line 358, in wait_closed
+    await self._protocol._get_close_waiter(self)
+  File "C:\Python314\Lib\asyncio\proactor_events.py", line 286, in _loop_reading
+    length = fut.result()
+  File "C:\Python314\Lib\asyncio\windows_events.py", line 804, in _poll
+    value = callback(transferred, key, ov)
+  File "C:\Python314\Lib\asyncio\windows_events.py", line 467, in finish_socket_func
+    raise ConnectionResetError(*exc.args)
+ConnectionResetError: [WinError 64] The specified network name is no longer available
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Python314\Lib\multiprocessing\process.py", line 320, in _bootstrap
+    self.run()
+    ~~~~~~~~^^
+  File "C:\Python314\Lib\multiprocessing\process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\ipc\inference_proc_lazy_main.py", line 50, in proc_main
+    client.run()
+    ~~~~~~~~~~^^
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\ipc\proc_client.py", line 70, in run
+    loop.run_until_complete(self._task)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "C:\Python314\Lib\asyncio\base_events.py", line 719, in run_until_complete
+    return future.result()
+           ~~~~~~~~~~~~~^^
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\ipc\proc_client.py", line 145, in _monitor_task
+    await self._acch.aclose()
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\utils\aio\duplex_unix.py", line 60, in aclose
+    raise DuplexClosed() from e
+livekit.agents.utils.aio.duplex_unix.DuplexClosed
+INFO:livekit:livekit_ffi::server:151:livekit_ffi::server - initializing ffi server v0.12.48
+DEBUG:asyncio:Using proactor: IocpProactor
+INFO:livekit.agents:starting worker
+INFO:livekit.agents:starting inference executor
+INFO:livekit.agents:initializing process
+INFO:livekit.agents:process initialized
+INFO:livekit.agents:HTTP server listening on :63797
+INFO:livekit.agents:registered worker
+Process agents_inference_process:
+Traceback (most recent call last):
+  File "C:\Python314\Lib\asyncio\windows_events.py", line 463, in finish_socket_func
+    return ov.getresult()
+           ~~~~~~~~~~~~^^
+OSError: [WinError 64] The specified network name is no longer available
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\utils\aio\duplex_unix.py", line 57, in aclose
+    await self._writer.wait_closed()
+  File "C:\Python314\Lib\asyncio\streams.py", line 358, in wait_closed
+    await self._protocol._get_close_waiter(self)
+  File "C:\Python314\Lib\asyncio\proactor_events.py", line 286, in _loop_reading
+    length = fut.result()
+  File "C:\Python314\Lib\asyncio\windows_events.py", line 804, in _poll
+    value = callback(transferred, key, ov)
+  File "C:\Python314\Lib\asyncio\windows_events.py", line 467, in finish_socket_func
+    raise ConnectionResetError(*exc.args)
+ConnectionResetError: [WinError 64] The specified network name is no longer available
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Python314\Lib\multiprocessing\process.py", line 320, in _bootstrap
+    self.run()
+    ~~~~~~~~^^
+  File "C:\Python314\Lib\multiprocessing\process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\ipc\inference_proc_lazy_main.py", line 50, in proc_main
+    client.run()
+    ~~~~~~~~~~^^
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\ipc\proc_client.py", line 70, in run
+    loop.run_until_complete(self._task)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "C:\Python314\Lib\asyncio\base_events.py", line 719, in run_until_complete
+    return future.result()
+           ~~~~~~~~~~~~~^^
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\ipc\proc_client.py", line 145, in _monitor_task
+    await self._acch.aclose()
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\utils\aio\duplex_unix.py", line 60, in aclose
+    raise DuplexClosed() from e
+livekit.agents.utils.aio.duplex_unix.DuplexClosed
+INFO:livekit:livekit_ffi::server:151:livekit_ffi::server - initializing ffi server v0.12.48
+DEBUG:asyncio:Using proactor: IocpProactor
+INFO:livekit.agents:starting worker
+INFO:livekit.agents:starting inference executor
+INFO:livekit.agents:initializing process
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    from multiprocessing.spawn import spawn_main; spawn_main(parent_pid=31268, pipe_handle=1312)
+                                                  ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\multiprocessing\spawn.py", line 122, in spawn_main
+    exitcode = _main(fd, parent_sentinel)
+  File "C:\Python314\Lib\multiprocessing\spawn.py", line 132, in _main
+    self = reduction.pickle.load(from_parent)
+  File "C:\Python314\Lib\multiprocessing\reduction.py", line 238, in _rebuild_socket
+    return ds.detach()
+           ~~~~~~~~~^^
+  File "C:\Python314\Lib\multiprocessing\resource_sharer.py", line 38, in detach
+    with _resource_sharer.get_connection(self._id) as conn:
+         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Python314\Lib\multiprocessing\resource_sharer.py", line 86, in get_connection
+    c = Client(address, authkey=process.current_process().authkey)
+  File "C:\Python314\Lib\multiprocessing\connection.py", line 534, in Client
+    c = PipeClient(address)
+  File "C:\Python314\Lib\multiprocessing\connection.py", line 736, in PipeClient
+    _winapi.WaitNamedPipe(address, 1000)
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+FileNotFoundError: [WinError 2] The system cannot find the file specified
+INFO:livekit:livekit_ffi::server:151:livekit_ffi::server - initializing ffi server v0.12.48
+DEBUG:asyncio:Using proactor: IocpProactor
+INFO:livekit.agents:starting worker
+INFO:livekit.agents:starting inference executor
+INFO:livekit.agents:initializing process
+INFO:livekit.agents:process initialized
+INFO:livekit.agents:HTTP server listening on :58207
+INFO:livekit.agents:registered worker
+Process agents_inference_process:
+Traceback (most recent call last):
+  File "C:\Python314\Lib\asyncio\windows_events.py", line 463, in finish_socket_func
+    return ov.getresult()
+           ~~~~~~~~~~~~^^
+OSError: [WinError 64] The specified network name is no longer available
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\utils\aio\duplex_unix.py", line 57, in aclose
+    await self._writer.wait_closed()
+  File "C:\Python314\Lib\asyncio\streams.py", line 358, in wait_closed
+    await self._protocol._get_close_waiter(self)
+  File "C:\Python314\Lib\asyncio\proactor_events.py", line 286, in _loop_reading
+    length = fut.result()
+  File "C:\Python314\Lib\asyncio\windows_events.py", line 804, in _poll
+    value = callback(transferred, key, ov)
+  File "C:\Python314\Lib\asyncio\windows_events.py", line 467, in finish_socket_func
+    raise ConnectionResetError(*exc.args)
+ConnectionResetError: [WinError 64] The specified network name is no longer available
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Python314\Lib\multiprocessing\process.py", line 320, in _bootstrap
+    self.run()
+    ~~~~~~~~^^
+  File "C:\Python314\Lib\multiprocessing\process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\ipc\inference_proc_lazy_main.py", line 50, in proc_main
+    client.run()
+    ~~~~~~~~~~^^
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\ipc\proc_client.py", line 70, in run
+    loop.run_until_complete(self._task)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "C:\Python314\Lib\asyncio\base_events.py", line 719, in run_until_complete
+    return future.result()
+           ~~~~~~~~~~~~~^^
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\ipc\proc_client.py", line 145, in _monitor_task
+    await self._acch.aclose()
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\utils\aio\duplex_unix.py", line 60, in aclose
+    raise DuplexClosed() from e
+livekit.agents.utils.aio.duplex_unix.DuplexClosed
+INFO:livekit:livekit_ffi::server:151:livekit_ffi::server - initializing ffi server v0.12.48
+DEBUG:asyncio:Using proactor: IocpProactor
+INFO:livekit.agents:starting worker
+INFO:livekit.agents:starting inference executor
+INFO:livekit.agents:initializing process
+INFO:livekit.agents:process initialized
+INFO:livekit.agents:HTTP server listening on :51994
+INFO:livekit.agents:registered worker
+INFO:livekit.agents:received job request
+DEBUG:livekit.agents:received assignment
+WARNING:livekit.agents:no warmed process available for job, waiting for one to be created
+INFO:livekit.agents:initializing job runner
+DEBUG:asyncio:Using proactor: IocpProactor
+INFO:livekit.agents:job runner initialized
+INFO:health-reminder-outbound:dialing amajali7849251 in room outbound-07bf8d3f
+DEBUG:livekit.agents:http_session(): creating a new httpclient ctx
+DEBUG:livekit.agents:configuring session recording
+DEBUG:livekit.agents:input stream attached
+DEBUG:livekit.agents:input stream detached
+DEBUG:livekit.agents:input stream attached
+DEBUG:livekit.agents:using audio io: `RoomIO` -> `RecorderIO` -> `AgentSession` -> `RecorderIO` -> `TranscriptSynchronizer` -> `RoomIO`
+DEBUG:livekit.agents:using transcript io: `AgentSession` -> `TranscriptSynchronizer` -> `RoomIO`
+DEBUG:livekit.plugins.deepgram:Established new Deepgram STT WebSocket connection:
+INFO:health-reminder-outbound:call to amajali7849251 failed: unknown (sip_status=0 twirp error unknown: invalid From header: should be a phone number or SIP user, not a full SIP URI) — retry=False ('unknown' is not retryable)
+DEBUG:livekit.agents:input stream detached
+DEBUG:livekit.agents:session closed
+DEBUG:livekit.agents:uploading session report to LiveKit Cloud
+ERROR:asyncio:Exception in callback _ProactorBasePipeTransport._call_connection_lost()
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost()>
+Traceback (most recent call last):
+  File "C:\Python314\Lib\asyncio\events.py", line 94, in _run
+    self._context.run(self._callback, *self._args)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\asyncio\proactor_events.py", line 165, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+ConnectionResetError: [WinError 10054] An existing connection was forcibly closed by the remote host
+DEBUG:livekit.agents:finished uploading
+DEBUG:livekit.agents:shutting down job task
+DEBUG:livekit.agents:job exiting
+DEBUG:livekit.agents:shutting down telemetry tracer provider
+DEBUG:livekit.agents:http_session(): closing the httpclient ctx
+INFO:livekit.agents:received job request
+DEBUG:livekit.agents:received assignment
+WARNING:livekit.agents:no warmed process available for job, waiting for one to be created
+INFO:livekit.agents:initializing job runner
+INFO:livekit.agents:job runner initialized
+DEBUG:asyncio:Using proactor: IocpProactor
+INFO:health-reminder-outbound:dialing amajali7849251 in room outbound-d01226e4
+DEBUG:livekit.agents:http_session(): creating a new httpclient ctx
+DEBUG:livekit.agents:configuring session recording
+DEBUG:livekit.agents:input stream attached
+DEBUG:livekit.agents:input stream detached
+DEBUG:livekit.agents:input stream attached
+DEBUG:livekit.agents:using audio io: `RoomIO` -> `RecorderIO` -> `AgentSession` -> `RecorderIO` -> `TranscriptSynchronizer` -> `RoomIO`
+DEBUG:livekit.agents:using transcript io: `AgentSession` -> `TranscriptSynchronizer` -> `RoomIO`
+INFO:health-reminder-outbound:call to amajali7849251 failed: unknown (sip_status=0 twirp error unknown: invalid From header: should be a phone number or SIP user, not a full SIP URI) — retry=False ('unknown' is not retryable)
+DEBUG:livekit.agents:input stream detached
+DEBUG:livekit.plugins.deepgram:Established new Deepgram STT WebSocket connection:
+DEBUG:livekit.agents:session closed
+DEBUG:livekit.agents:uploading session report to LiveKit Cloud
+DEBUG:livekit.agents:finished uploading
+DEBUG:livekit.agents:shutting down job task
+DEBUG:livekit.agents:job exiting
+DEBUG:livekit.agents:shutting down telemetry tracer provider
+DEBUG:livekit.agents:http_session(): closing the httpclient ctx
+Process agents_inference_process:
+Traceback (most recent call last):
+  File "C:\Python314\Lib\asyncio\windows_events.py", line 463, in finish_socket_func
+    return ov.getresult()
+           ~~~~~~~~~~~~^^
+OSError: [WinError 64] The specified network name is no longer available
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\utils\aio\duplex_unix.py", line 57, in aclose
+    await self._writer.wait_closed()
+  File "C:\Python314\Lib\asyncio\streams.py", line 358, in wait_closed
+    await self._protocol._get_close_waiter(self)
+  File "C:\Python314\Lib\asyncio\proactor_events.py", line 286, in _loop_reading
+    length = fut.result()
+  File "C:\Python314\Lib\asyncio\windows_events.py", line 804, in _poll
+    value = callback(transferred, key, ov)
+  File "C:\Python314\Lib\asyncio\windows_events.py", line 467, in finish_socket_func
+    raise ConnectionResetError(*exc.args)
+ConnectionResetError: [WinError 64] The specified network name is no longer available
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Python314\Lib\multiprocessing\process.py", line 320, in _bootstrap
+    self.run()
+    ~~~~~~~~^^
+  File "C:\Python314\Lib\multiprocessing\process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\ipc\inference_proc_lazy_main.py", line 50, in proc_main
+    client.run()
+    ~~~~~~~~~~^^
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\ipc\proc_client.py", line 70, in run
+    loop.run_until_complete(self._task)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "C:\Python314\Lib\asyncio\base_events.py", line 719, in run_until_complete
+    return future.result()
+           ~~~~~~~~~~~~~^^
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\ipc\proc_client.py", line 145, in _monitor_task
+    await self._acch.aclose()
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\utils\aio\duplex_unix.py", line 60, in aclose
+    raise DuplexClosed() from e
+livekit.agents.utils.aio.duplex_unix.DuplexClosed
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    from multiprocessing.spawn import spawn_main; spawn_main(parent_pid=29448, pipe_handle=640)
+                                                  ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\multiprocessing\spawn.py", line 122, in spawn_main
+    exitcode = _main(fd, parent_sentinel)
+  File "C:\Python314\Lib\multiprocessing\spawn.py", line 131, in _main
+    prepare(preparation_data)
+    ~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\multiprocessing\spawn.py", line 246, in prepare
+    _fixup_main_from_path(data['init_main_from_path'])
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\multiprocessing\spawn.py", line 297, in _fixup_main_from_path
+    main_content = runpy.run_path(main_path,
+                                  run_name="__mp_main__")
+  File "<frozen runpy>", line 287, in run_path
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\src\telephony\outbound\agent.py", line 92, in <module>
+    scheme = re.match(r"^(?:sips?):(.+)$", FROM_NUMBER.strip(), re.IGNORECASE)
+             ^^
+NameError: name 're' is not defined. Did you forget to import 're'?
+WARNING:watchfiles.main:process already dead, exit code: 1
+INFO:livekit:livekit_ffi::server:151:livekit_ffi::server - initializing ffi server v0.12.48
+DEBUG:asyncio:Using proactor: IocpProactor
+INFO:livekit.agents:starting worker
+INFO:livekit.agents:starting inference executor
+INFO:livekit.agents:initializing process
+INFO:livekit.agents:process initialized
+INFO:livekit.agents:HTTP server listening on :56914
+INFO:livekit.agents:registered worker
+worker process is not responding.. worker crashed?
+ERROR:livekit.agents:process is unresponsive, killing process
+INFO:livekit.agents:killing process
+WARNING:livekit.agents:unexpected message type: 258
+WARNING:livekit.agents:failed to connect to livekit, retrying in 0s
+Traceback (most recent call last):
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\worker.py", line 1011, in _connection_task
+    await self._run_ws(ws)
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\worker.py", line 1093, in _run_ws
+    await asyncio.gather(*tasks)
+  File "C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Lib\site-packages\livekit\agents\worker.py", line 1065, in _recv_task
+    raise Exception("worker connection closed unexpectedly")
+Exception: worker connection closed unexpectedly
+INFO:livekit.agents:registered worker
+INFO:livekit:livekit_ffi::server:151:livekit_ffi::server - initializing ffi server v0.12.48
+DEBUG:asyncio:Using proactor: IocpProactor
+INFO:livekit.agents:starting worker
+INFO:livekit.agents:starting inference executor
+INFO:livekit.agents:initializing process
+INFO:livekit.agents:process initialized
+INFO:livekit.agents:HTTP server listening on :60663
+INFO:livekit.agents:registered worker

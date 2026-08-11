@@ -1,63 +1,92 @@
-"""Trigger an outbound health-reminder call.
+"""Trigger an outbound health-reminder call over Linphone.
 
 The outbound agent doesn't call anyone on its own — it waits to be dispatched
-into a room with a phone number in the job metadata. This script sends the
-dispatch request to the Twilio bridge (twilio_bridge.py), which uses the
-LiveKit Twilio Connector + Twilio Programmable Voice so the call works on a
-free trial account.
+into a room with a dial target in the job metadata. This script creates the
+room and dispatches the ``health-reminder-agent`` worker through LiveKit's API.
+The worker then dials out through the LiveKit outbound trunk
+(``sip.linphone.org``, TLS) and the **Linphone app on your phone rings**.
 
-Make sure the worker and the bridge are running first (two terminals):
+Make sure the worker is running first (Terminal 1):
 
     uv run python src/telephony/outbound/agent.py dev
-    uv run python src/telephony/outbound/twilio_bridge.py
 
-Then place a call (E.164 number, e.g. +919876543210):
+Then place a call from a second terminal (Terminal 2). ``--to`` accepts:
 
-    uv run python src/telephony/outbound/dial.py --to +919876543210
+* a bare Linphone username   -> ``sunita``
+* a full SIP address         -> ``sip:sunita@sip.linphone.org``
+* an E.164 phone number      -> ``+919876543210`` (only if your trunk reaches it)
+
+LiveKit's ``sip_call_to`` takes a phone number or SIP **user** (the trunk's
+``address`` supplies the domain), so ``sunita`` and
+``sip:sunita@sip.linphone.org`` both dial ``sunita`` on your trunk.
+
+    uv run python src/telephony/outbound/dial.py --to sunita
 
 Optional caller/reminder context (the agent opens with these):
 
-    uv run python src/telephony/outbound/dial.py --to +919876543210 \
+    uv run python src/telephony/outbound/dial.py --to sunita \
         --name "Sunita Devi" --reminder medication --medication मधुमेह \
         --location Varanasi
 
-This is the scriptable equivalent of:
+This is the scriptable equivalent of the LiveKit CLI:
 
-    curl -X POST http://127.0.0.1:8899/place \
-        -H "Content-Type: application/json" \
-        -d '{"to": "+919876543210"}'
+    lk room create --name <room> && lk dispatch create \
+        --agent health-reminder-agent --room <room> --metadata '<json>'
 """
 
 from __future__ import annotations
 
 import argparse
+import asyncio
 import json
-import os
 import re
 import sys
 import uuid
 
-import httpx
 from dotenv import load_dotenv
+from livekit import api
 
 load_dotenv(".env.local")
 
-# The Twilio bridge (src/telephony/outbound/twilio_bridge.py). Override with
-# TWILIO_BRIDGE_URL if the bridge runs elsewhere.
-BRIDGE_URL = os.getenv("TWILIO_BRIDGE_URL", "http://127.0.0.1:8899")
+# Must match the worker's agent_name in telephony/outbound/agent.py.
+AGENT_NAME = "health-reminder-agent"
 
 # E.164: a leading + and 7-15 digits, e.g. +919876543210.
 E164 = re.compile(r"^\+[1-9]\d{6,14}$")
 
+# A bare username is any single token with no spaces/slashes (RFC-ish user part).
+_USERNAME = re.compile(r"^[A-Za-z0-9._%+-]+$")
+
+
+def normalize_dial_target(target: str) -> str:
+    """Turn ``--to`` into the value LiveKit's ``sip_call_to`` accepts.
+
+    LiveKit rejects full SIP URIs ("SipCallTo should be a phone number or SIP
+    user, not a full SIP URI") — the trunk's ``address`` already supplies the
+    domain. So a username, a ``sip:user@host`` address, or a ``user@host``
+    address all reduce to the bare SIP user; an E.164 number passes through.
+    """
+    target = (target or "").strip()
+    if not target:
+        sys.exit("--to is required: a Linphone username, sip: URI, or E.164 number.")
+    if target.lower().startswith("sip:"):
+        target = target[4:]
+    if "@" in target:
+        target = target.split("@", 1)[0]
+    if E164.match(target):
+        return target
+    if _USERNAME.match(target):
+        return target
+    sys.exit(
+        f"'{target}' is not a valid dial target. Use a Linphone username "
+        "(e.g. sunita), a SIP address (e.g. sip:sunita@sip.linphone.org), "
+        "or an E.164 phone number (e.g. +919876543210)."
+    )
+
 
 def build_metadata(args: argparse.Namespace) -> str:
     """Assemble the dispatch metadata (the reminder context the agent reads)."""
-    if not E164.match(args.to):
-        sys.exit(
-            f"'{args.to}' is not a valid E.164 number. "
-            "Include the country code and a leading +, e.g. +919876543210."
-        )
-    meta: dict = {"phone_number": args.to}
+    meta: dict = {"phone_number": normalize_dial_target(args.to)}
     if args.name:
         meta["name"] = args.name
     if args.reminder:
@@ -71,26 +100,37 @@ def build_metadata(args: argparse.Namespace) -> str:
     return json.dumps(meta, ensure_ascii=False)
 
 
-def dial(phone_number: str, room_name: str, metadata: str) -> None:
-    """Ask the Twilio bridge to place the call (LiveKit connector + Twilio)."""
-    payload = json.loads(metadata)
-    payload["room"] = room_name
-    r = httpx.post(f"{BRIDGE_URL}/place", json=payload, timeout=60)
-    if r.status_code >= 400:
-        sys.exit(f"bridge returned {r.status_code}: {r.text}")
-    print(r.json().get("message", r.text))
+async def dispatch(room_name: str, metadata: str) -> None:
+    """Create the room and dispatch the outbound worker into it (LiveKit API)."""
+    lk = api.LiveKitAPI()
+    try:
+        await lk.room.create_room(
+            api.CreateRoomRequest(name=room_name, empty_timeout=300)
+        )
+        await lk.agent_dispatch.create_dispatch(
+            api.CreateAgentDispatchRequest(
+                agent_name=AGENT_NAME,
+                room=room_name,
+                metadata=metadata,
+            )
+        )
+    finally:
+        await lk.aclose()
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Place an outbound health-reminder call.",
+        description="Place an outbound health-reminder call over Linphone.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__,
     )
     parser.add_argument(
         "--to",
         required=True,
-        help="Number to call, in E.164 format (e.g. +919876543210)",
+        help=(
+            "Who to call: a Linphone username (sunita), a full SIP address "
+            "(sip:sunita@sip.linphone.org), or an E.164 number (+919876543210)"
+        ),
     )
     parser.add_argument("--name", default=None, help="Caller's name, for the opening.")
     parser.add_argument(
@@ -118,9 +158,9 @@ def main() -> None:
     metadata = build_metadata(args)
     room_name = args.room or f"outbound-{uuid.uuid4().hex[:8]}"
 
-    dial(args.to, room_name, metadata)
-    print(f"Sent to bridge for room '{room_name}' to call {args.to}.")
-    print("Your phone will ring shortly. Watch the worker terminal for progress.")
+    asyncio.run(dispatch(room_name, metadata))
+    print(f"Dispatched {AGENT_NAME} into room '{room_name}' to call {args.to}.")
+    print("Your Linphone app will ring shortly. Watch the worker terminal.")
 
 
 if __name__ == "__main__":

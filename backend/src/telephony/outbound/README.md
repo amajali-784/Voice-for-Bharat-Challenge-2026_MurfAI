@@ -6,6 +6,11 @@ they are doing. It is the same `hi-IN-anisha` (Murf Falcon) voice, the same
 Deepgram → Gemini → Murf pipeline, and it reuses the Day 4 caller memory and
 Day 5 facility lookup.
 
+Calls go out over **Linphone** — a free SIP softphone that registers to
+`sip.linphone.org` over TLS, so you do **not** need Twilio, a phone number, or
+any paid telephony. You install the Linphone app, log in with a free account,
+and the agent's outbound call rings your app like a normal phone call.
+
 The person did not ask for this call and does not know who we are, so **every
 call opens with who is calling, why, and how to make it stop** — the opening is
 spoken deterministically (not generated) so it can never be skipped. If the
@@ -13,12 +18,12 @@ person says "कॉल बंद करो" / "stop calling", the `opt_out` tool
 memory and the agent never dials them again.
 
 ```
-dial.py --to +919876543210
-  → LiveKit: create room + dispatch (phone + reminder metadata)
+dial.py --to sunita
+  → LiveKit: create room + dispatch (sip:sunita@sip.linphone.org + reminder metadata)
     → health-reminder-agent worker (this folder)
       → session.start() (models warm up while it rings)
-        → create_sip_participant (outbound trunk → Twilio → PSTN)
-          → phone rings → person answers
+        → create_sip_participant (outbound trunk → sip.linphone.org, TLS)
+          → Linphone app rings → you answer
             → agent speaks the opening (who / why / opt-out)
               → reminder conversation → opt_out or end_call
 ```
@@ -27,53 +32,46 @@ dial.py --to +919876543210
 
 ## One-time setup
 
-### 1. Twilio — Elastic SIP Trunk
+### 1. Linphone account + app
 
-1. [console.twilio.com](https://console.twilio.com) → **Elastic SIP Trunking** → **Trunks** → **Create**.
-2. Give it a name (e.g. `health-reminder`) and note the **Termination URI**
-   shown at the top (e.g. `mytrunk.pstn.twilio.com`).
-3. Create a **Credential List** (username + password) under that trunk and
-   attach it to the trunk. Save the username/password.
-4. Under the trunk's **Origination**, add one origination URI pointing at your
-   LiveKit SIP URI (`xxx.sip.livekit.cloud`) — only needed if you ever want
-   *inbound* calls; outbound calls do not need it.
-5. Make sure the **number you will call from** is a verified Twilio number
-   (Twilio Console → Phone Numbers → verified caller IDs). This number is the
-   caller ID on your outbound calls.
+1. Create a free account at
+   [subscribe.linphone.org/register/email](https://subscribe.linphone.org/register/email).
+   After registering you get a **SIP address** like
+   `sip:<your-username>@sip.linphone.org`. Note it down.
+2. Install the **Linphone** app on your phone (iOS / Android / desktop) from
+   [linphone.org](https://www.linphone.org/en/) and log in with those
+   credentials. Allow microphone access.
+3. Turn **Media encryption mandatory OFF**:
+   Settings → Calls → Advanced calls settings → toggle it off. Without this the
+   call fails at the SRTP negotiation.
 
 ### 2. LiveKit — outbound trunk
 
-Create an outbound trunk that routes through the Twilio Elastic SIP Trunk. From
-the LiveKit CLI, write `outbound-trunk.json` with the trunk's **Termination
-URI** and your Twilio number (the caller ID):
+In LiveKit Cloud → **Telephony → SIP Trunks → Create outbound trunk**, enter:
 
 ```json
 {
-  "trunk": {
-    "name": "health-reminder-trunk",
-    "address": "<your-trunk>.pstn.twilio.com",
-    "numbers": ["+1xxxxxxxxxx"]
-  }
+  "name": "linphone-trunk",
+  "address": "sip.linphone.org",
+  "transport": "SIP_TRANSPORT_TLS",
+  "numbers": ["*"]
 }
 ```
 
-Then create it with the SIP credential-list username/password from step 1:
+`address` is the Linphone SIP server and `transport` must be
+`SIP_TRANSPORT_TLS`. The editor only accepts **E.164 phone numbers** in
+`numbers`, so use the wildcard `["*"]` ("calls from any number") and set the
+actual caller ID per call with `SIP_FROM_NUMBER` (step 3). LiveKit documents
+this: when `numbers` is `*` or empty, you pick the from-number on each
+`CreateSIPParticipant` call via `sip_number`.
 
-```bash
-lk sip outbound create outbound-trunk.json \
-  --auth-user <sip-credential-username> \
-  --auth-pass <sip-credential-password>
-```
+LiveKit Cloud shows a **TRUNK ID** (e.g. `ST_xxxx`) when the trunk is created.
+Save it as `LIVEKIT_SIP_OUTBOUND_TRUNK_ID` in `backend/.env.local`.
 
-> `address` is the Elastic SIP trunk's Termination URI from step 1; `numbers`
-> holds your Twilio phone number (the caller ID).
-
-The command prints a trunk ID like `ST_xxxx`. Save it as
-`LIVEKIT_SIP_OUTBOUND_TRUNK_ID` in `backend/.env.local`. Verify with
-`lk sip outbound list`.
-
-You can also create the trunk from the **LiveKit Cloud console** → **Telephony →
-SIP Trunks → Create outbound trunk** with the same values.
+> If you prefer the CLI, the same trunk can be created with
+> `lk sip outbound create --name linphone-trunk --address sip.linphone.org
+> --number "*" --transport tls` and listed with
+> `lk sip outbound list`.
 
 ### 3. Environment variables
 
@@ -82,11 +80,11 @@ Copy `backend/.env.example` to `backend/.env.local` and set at minimum:
 | Variable                          | Value                                                        |
 | --------------------------------- | ------------------------------------------------------------ |
 | `LIVEKIT_SIP_OUTBOUND_TRUNK_ID`   | the `ST_xxxx` trunk id from step 2                          |
-| `TWILIO_PHONE_NUMBER`             | your Twilio number, the caller ID (optional if on the trunk) |
-| `SIP_RINGING_TIMEOUT`             | seconds to let it ring (default `30`)                        |
+| `SIP_FROM_NUMBER`                 | `<your-linphone-username>` — the caller ID your app sees. Bare username only (no `@domain`, no `sip:` scheme): LiveKit validates the From header like the dial target and appends the trunk's domain |
 
-`TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` are **not required** to make calls —
-only if you script the trunk setup or add post-call messages.
+Optional: `SIP_RINGING_TIMEOUT` (seconds to ring, default `30`).
+
+No Twilio, no SIP credentials, no tunnel — the Linphone path needs nothing else.
 
 ---
 
@@ -99,16 +97,21 @@ cd backend
 uv run python src/telephony/outbound/agent.py dev
 ```
 
-Terminal 2 — place a call (E.164 number):
+Terminal 2 — place a call to your Linphone account (username is enough):
 
 ```bash
-uv run python src/telephony/outbound/dial.py --to +919876543210
+uv run python src/telephony/outbound/dial.py --to sunita
 ```
+
+`--to` also accepts a full SIP address (`sip:sunita@sip.linphone.org`) or an
+E.164 number (`+919876543210`) if your trunk can reach it. Either way the trunk
+dials the SIP **user** (`sunita`) — LiveKit's `sip_call_to` rejects full URIs
+and takes the phone number or user part only.
 
 With reminder context (the opening will use it):
 
 ```bash
-uv run python src/telephony/outbound/dial.py --to +919876543210 \
+uv run python src/telephony/outbound/dial.py --to sunita \
   --name "Sunita Devi" \
   --reminder medication --medication मधुमेह \
   --location Varanasi
@@ -116,8 +119,8 @@ uv run python src/telephony/outbound/dial.py --to +919876543210 \
 
 `--reminder` is one of `medication` | `vaccination` | `followup`.
 
-Your phone rings, the agent opens with who/why/opt-out, and the conversation
-follows the reminder script.
+Your Linphone app rings, the agent opens with who/why/opt-out, and the
+conversation follows the reminder script.
 
 ---
 
@@ -136,16 +139,16 @@ Three things, up front: **who** (स्वास्थ्य सहायक), *
 
 Inbound never sees these; outbound hits them daily:
 
-| Outcome          | When                                               | Behaviour                                        |
-| ---------------- | ------------------------------------------------- | ------------------------------------------------ |
-| `answered`       | `create_sip_participant` returns                  | run the conversation                             |
-| `no_answer`      | SIP 408 / 480 / 487                               | log + **retry once after 10 min**                |
-| `busy`           | SIP 486 / 600                                     | log + **retry once after 10 min**                |
-| `declined`       | SIP 603                                           | log, **no retry** (person actively refused)      |
-| `trunk_failure`  | SIP 5xx                                           | log + retry once                                 |
-| `voicemail`      | agent hears a greeting/beep → `detected_voicemail`| hang up, **no retry**                            |
-| `opted_out`      | person asks to stop → `opt_out`                   | mark in memory, hang up, **never dial again**    |
-| `hung_up_immediate` | answered but caller hangs up right away        | log                                              |
+| Outcome            | When                                               | Behaviour                                        |
+| ------------------ | ------------------------------------------------- | ------------------------------------------------ |
+| `answered`         | `create_sip_participant` returns                  | run the conversation                             |
+| `no_answer`        | SIP 408 / 480 / 487                               | log + **retry once after 10 min**                |
+| `busy`             | SIP 486 / 600                                     | log + **retry once after 10 min**                |
+| `declined`         | SIP 603                                           | log, **no retry** (person actively refused)      |
+| `trunk_failure`    | SIP 5xx                                           | log + retry once                                 |
+| `voicemail`        | agent hears a greeting/beep → `detected_voicemail`| hang up, **no retry**                            |
+| `opted_out`        | person asks to stop → `opt_out`                   | mark in memory, hang up, **never dial again**    |
+| `hung_up_immediate`| answered but caller hangs up right away           | log                                              |
 
 Every attempt is appended as a JSON line to `backend/logs/outcomes.jsonl`
 (with `retry` and `attempt` fields), and the retry decision is computed in
@@ -158,6 +161,6 @@ Every attempt is appended as a JSON line to `backend/logs/outcomes.jsonl`
 | File       | Purpose                                                    |
 | ---------- | ---------------------------------------------------------- |
 | `agent.py` | Outbound worker: dials, opens the call, runs the reminder, records outcomes |
-| `dial.py`  | CLI that dispatches the worker with a phone number + reminder metadata |
+| `dial.py`  | CLI that creates a room + dispatches the worker with a SIP address + reminder metadata |
 | `outcome.py` | SIP status → outcome mapping, retry rules, JSONL call log |
 | `../../tests/test_outbound.py` | Network-free tests for the above |

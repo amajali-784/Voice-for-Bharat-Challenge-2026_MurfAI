@@ -234,3 +234,16 @@ backend/
 ## License
 
 MIT — see [LICENSE](LICENSE).
+e "Sunita Devi" --reminder medication --medication मधुमेह
+Dispatched health-reminder-agent into room 'outbound-87cddbf7' to call amajali7849251.
+Your Linphone app will ring shortly. Watch the worker terminal.
+PS C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend> uv run python src/telephony/outbound/dial.py --to amajali7849251
+Dispatched health-reminder-agent into room 'outbound-ead2b00f' to call amajali7849251.
+Your Linphone app will ring shortly. Watch the worker terminal.
+PS C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend> uv run python src/telephony/outbound/dial.py --to amajali7849251 --name "Sunita Devi" --reminder medication --medication मधुमेह  
+Dispatched health-reminder-agent into room 'outbound-ff4c41b7' to call amajali7849251.
+Your Linphone app will ring shortly. Watch the worker terminal.
+PS C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend> 
+
+
+uv run python src/telephony/outbound/dial.py --to amajali7849251

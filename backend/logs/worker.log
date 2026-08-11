@@ -1,0 +1,668 @@
+    23:11:38.958 DEBUG… asyncio            Using proactor: IocpProactor  
+    23:11:38.978 DEV  … livekit.agents     Watching                            
+                                           C:\Users\ankus\Downloads\Murf\voi…  
+    23:11:43.411 INFO … livekit            livekit_ffi::server:151:livekit_f…  
+                                           - initializing ffi server v0.12.48  
+    23:11:43.413 DEBUG… asyncio            Using proactor: IocpProactor  
+    23:11:43.441 INFO … livekit.agents     starting worker  
+                                         {"version": "1.4.5", "rtc-version": 
+"1.1.2"}
+    23:11:43.451 INFO … livekit.agents     starting inference executor  
+    23:11:43.491 INFO … livekit.agents     initializing process  
+                                         {"pid": 27252, "inference": true}
+    23:11:53.144 INFO … livekit.agents     process initialized  
+                                         {"pid": 27252, "inference": true, 
+"elapsed_time": 9.64}
+    23:11:53.150 INFO … livekit.agents     HTTP server listening on :49845  
+    23:11:53.248 INFO … livekit.agents     registered worker  
+                                         {"agent_name": 
+"health-reminder-agent", "id": "AW_k3kSiih7tYQ9", "url": 
+"wss://voice-for-bharat-challenge-2026-s64l1jh3.livekit.cloud", "region": 
+"India South", "protocol": 17}
+    23:43:53.176 DEBUG… asyncio            Using proactor: IocpProactor  
+    23:43:53.193 INFO … livekit.agents     starting worker  
+                                         {"version": "1.4.5", "rtc-version": 
+"1.1.2"}
+    23:43:53.198 INFO … livekit.agents     starting inference executor  
+    23:43:53.220 INFO … livekit.agents     initializing process  
+                                         {"pid": 33080, "inference": true}
+    23:43:53.204 ERROR… livekit.agents     Error in _read_ipc_task  
+Traceback (most recent call last):
+  File 
+"C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Li
+b\site-packages\livekit\agents\utils\aio\duplex_unix.py", line 35, in 
+recv_bytes
+    len_bytes = await self._reader.readexactly(4)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\asyncio\streams.py", line 767, in readexactly
+    raise exceptions.IncompleteReadError(incomplete, n)
+asyncio.exceptions.IncompleteReadError: 0 bytes read on a total of 4 expected 
+bytes
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File 
+"C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Li
+b\site-packages\livekit\agents\utils\log.py", line 17, in async_fn_logs
+    return await fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Li
+b\site-packages\livekit\agents\cli\watcher.py", line 136, in _read_ipc_task
+    msg = await channel.arecv_message(self._pch, proto.IPC_MESSAGES)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Li
+b\site-packages\livekit\agents\ipc\channel.py", line 47, in arecv_message
+    return _read_message(await dplx.recv_bytes(), messages)
+                         ^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Li
+b\site-packages\livekit\agents\utils\aio\duplex_unix.py", line 43, in 
+recv_bytes
+    raise DuplexClosed() from e
+livekit.agents.utils.aio.duplex_unix.DuplexClosed
+    23:43:58.654 INFO … livekit            livekit_ffi::server:151:livekit_f…  
+                                           - initializing ffi server v0.12.48  
+    23:43:58.655 DEBUG… asyncio            Using proactor: IocpProactor  
+    23:43:58.688 INFO … livekit.agents     starting worker  
+                                         {"version": "1.4.5", "rtc-version": 
+"1.1.2"}
+    23:43:58.698 INFO … livekit.agents     starting inference executor  
+    23:43:58.729 INFO … livekit.agents     initializing process  
+                                         {"pid": 4512, "inference": true}
+    23:44:05.531 INFO … livekit            livekit_ffi::server:151:livekit_f…  
+                                           - initializing ffi server v0.12.48  
+    23:44:05.532 DEBUG… asyncio            Using proactor: IocpProactor  
+    23:44:05.559 INFO … livekit.agents     starting worker  
+                                         {"version": "1.4.5", "rtc-version": 
+"1.1.2"}
+    23:44:05.564 INFO … livekit.agents     starting inference executor  
+    23:44:05.616 INFO … livekit.agents     initializing process  
+                                         {"pid": 30308, "inference": true}
+    23:44:13.287 INFO … livekit            livekit_ffi::server:151:livekit_f…  
+                                           - initializing ffi server v0.12.48  
+    23:44:13.288 DEBUG… asyncio            Using proactor: IocpProactor  
+    23:44:13.305 INFO … livekit.agents     starting worker  
+                                         {"version": "1.4.5", "rtc-version": 
+"1.1.2"}
+    23:44:13.309 INFO … livekit.agents     starting inference executor  
+    23:44:13.360 INFO … livekit.agents     initializing process  
+                                         {"pid": 12140, "inference": true}
+    23:44:33.291 WARNI… watchfiles.main    process already dead, exit code: 1  
+    23:44:38.061 INFO … livekit            livekit_ffi::server:151:livekit_f…  
+                                           - initializing ffi server v0.12.48  
+    23:44:38.062 DEBUG… asyncio            Using proactor: IocpProactor  
+    23:44:38.080 INFO … livekit.agents     starting worker  
+                                         {"version": "1.4.5", "rtc-version": 
+"1.1.2"}
+    23:44:38.083 INFO … livekit.agents     starting inference executor  
+    23:44:38.105 INFO … livekit.agents     initializing process  
+                                         {"pid": 24952, "inference": true}
+    23:44:47.240 INFO … livekit            livekit_ffi::cabi:50:livekit_ffi:…  
+                                           - initializing ffi server v0.12.48  
+    23:44:47.241 DEBUG… asyncio            Using proactor: IocpProactor  
+    23:44:47.269 INFO … livekit.agents     starting worker  
+                                         {"version": "1.4.5", "rtc-version": 
+"1.1.2"}
+    23:44:47.276 INFO … livekit.agents     starting inference executor  
+    23:44:47.305 INFO … livekit.agents     initializing process  
+                                         {"pid": 14904, "inference": true}
+    23:44:59.489 INFO … livekit.agents     process initialized  
+                                         {"pid": 14904, "inference": true, 
+"elapsed_time": 12.18}
+    23:44:59.498 INFO … livekit.agents     HTTP server listening on :59404  
+    23:44:59.648 INFO … livekit.agents     registered worker  
+                                         {"agent_name": 
+"health-reminder-agent", "id": "AW_RJTPnSsjhadh", "url": 
+"wss://voice-for-bharat-challenge-2026-s64l1jh3.livekit.cloud", "region": 
+"India South", "protocol": 17}
+    23:47:18.016 INFO … livekit            livekit_ffi::server:151:livekit_f…  
+                                           - initializing ffi server v0.12.48  
+    23:47:18.017 DEBUG… asyncio            Using proactor: IocpProactor  
+    23:47:18.033 INFO … livekit.agents     starting worker  
+                                         {"version": "1.4.5", "rtc-version": 
+"1.1.2"}
+    23:47:18.037 INFO … livekit.agents     starting inference executor  
+    23:47:18.056 INFO … livekit.agents     initializing process  
+                                         {"pid": 37868, "inference": true}
+    23:47:26.786 INFO … livekit.agents     process initialized  
+                                         {"pid": 37868, "inference": true, 
+"elapsed_time": 8.73}
+    23:47:26.792 INFO … livekit.agents     HTTP server listening on :51981  
+    23:47:26.908 INFO … livekit.agents     registered worker  
+                                         {"agent_name": 
+"health-reminder-agent", "id": "AW_7MyGwQ4najDu", "url": 
+"wss://voice-for-bharat-challenge-2026-s64l1jh3.livekit.cloud", "region": 
+"India South", "protocol": 17}
+    23:49:12.871 WARNI… livekit.agents     unexpected message type: 258  
+    23:49:12.877 WARNI… livekit.agents     failed to connect to livekit,       
+                                           retrying in 0s                      
+Traceback (most recent call last):
+  File 
+"C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Li
+b\site-packages\livekit\agents\worker.py", line 1011, in _connection_task
+    await self._run_ws(ws)
+  File 
+"C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Li
+b\site-packages\livekit\agents\worker.py", line 1093, in _run_ws
+    await asyncio.gather(*tasks)
+  File 
+"C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Li
+b\site-packages\livekit\agents\worker.py", line 1065, in _recv_task
+    raise Exception("worker connection closed unexpectedly")
+Exception: worker connection closed unexpectedly
+    23:49:13.081 INFO … livekit.agents     registered worker  
+                                         {"agent_name": 
+"health-reminder-agent", "id": "AW_eDXZjRxiVkdD", "url": 
+"wss://voice-for-bharat-challenge-2026-s64l1jh3.livekit.cloud", "region": 
+"India South", "protocol": 17}
+    00:13:37.034 INFO … livekit.agents     received job request  
+                                         {"job_id": "AJ_F4KkfgpxQgk2", 
+"dispatch_id": "AD_o2VZRkeSrW5A", "room": "outbound-6590e902", "room_id": 
+"RM_C2UPhjrDeDua", "agent_name": "health-reminder-agent", "resuming": false, 
+"enable_recording": true}
+    00:13:37.076 DEBUG… livekit.agents     received assignment  
+                                         {"agent_name": 
+"health-reminder-agent", "room_id": "RM_C2UPhjrDeDua", "room": 
+"outbound-6590e902", "job_id": "AJ_F4KkfgpxQgk2", "dispatch_id": 
+"AD_o2VZRkeSrW5A", "enable_recording": true}
+    00:13:37.084 WARNI… livekit.agents     no warmed process available for     
+                                           job, waiting for one to be created  
+                                         {"job_id": "AJ_F4KkfgpxQgk2"}
+    00:13:37.095 INFO … livekit.agents     initializing job runner  
+                                         {"tid": 34044}
+    00:13:37.267 DEBUG… asyncio            Using proactor: IocpProactor  
+                 INFO … livekit.agents     job runner initialized  
+                                         {"tid": 34044, "elapsed_time": 0.17}
+    00:13:38.812 INFO … health-r…-outbound dialing                             
+                                           sip:amajali7849251@sip.linphone.o…  
+                                           in room outbound-6590e902           
+    00:13:38.818 DEBUG… livekit.agents     http_session(): creating a new      
+                                           httpclient ctx                      
+    00:13:38.822 DEBUG… livekit.agents     configuring session recording  
+                                         {"hostname": 
+"voice-for-bharat-challenge-2026-s64l1jh3.ohyderabad1a.production.livekit.cloud
+"}
+    00:13:38.831 DEBUG… livekit.agents     input stream attached  
+                                         {"participant": null, "source": 
+"SOURCE_UNKNOWN", "accepted_sources": ["SOURCE_MICROPHONE"]}
+    00:13:38.836 DEBUG… livekit.agents     input stream detached  
+                                         {"participant": null, "source": 
+"SOURCE_UNKNOWN", "accepted_sources": ["SOURCE_MICROPHONE"]}
+    00:13:38.839 DEBUG… livekit.agents     input stream attached  
+                                         {"participant": null, "source": 
+"SOURCE_UNKNOWN", "accepted_sources": ["SOURCE_MICROPHONE"]}
+    00:13:38.842 ERROR… livekit.agents     unhandled exception while running   
+                                           the job task                        
+Traceback (most recent call last):
+  File 
+"C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Li
+b\site-packages\google\protobuf\internal\well_known_types.py", line 450, in 
+FromTimedelta
+    td.seconds + td.days * _SECONDS_PER_DAY,
+    ^^^^^^^^^^
+AttributeError: 'int' object has no attribute 'seconds'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File 
+"C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Li
+b\site-packages\opentelemetry\util\_decorator.py", line 71, in async_wrapper
+    return await func(*args, **kwargs)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Li
+b\site-packages\livekit\agents\ipc\job_proc_lazy_main.py", line 306, in 
+_traceable_entrypoint
+    await self._job_entrypoint_fnc(job_ctx)
+  File 
+"C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\src\tele
+phony\outbound\agent.py", line 404, in entrypoint
+    api.CreateSIPParticipantRequest(**dial_kwargs)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File 
+"C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Li
+b\site-packages\google\protobuf\internal\well_known_types.py", line 460, in 
+_internal_assign
+    self.FromTimedelta(td)
+    ~~~~~~~~~~~~~~~~~~^^^^
+  File 
+"C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Li
+b\site-packages\google\protobuf\internal\well_known_types.py", line 454, in 
+FromTimedelta
+    raise AttributeError(
+    ...<2 lines>...
+    ) from e
+AttributeError: Fail to convert to Duration. Expected a timedelta like object 
+got int: 'int' object has no attribute 'seconds'
+    00:13:38.873 DEBUG… livekit.agents     using audio io: `RoomIO` ->         
+                                           `RecorderIO` -> `AgentSession` ->   
+                                           `RecorderIO` ->                     
+                                           `TranscriptSynchronizer` ->         
+                                           `RoomIO`                            
+    00:13:38.882 DEBUG… livekit.agents     using transcript io:                
+                                           `AgentSession` ->                   
+                                           `TranscriptSynchronizer` ->         
+                                           `RoomIO`                            
+    00:13:38.891 DEBUG… livekit.agents     input stream detached  
+                                         {"participant": null, "source": 
+"SOURCE_UNKNOWN", "accepted_sources": ["SOURCE_MICROPHONE"]}
+    00:13:39.672 DEBUG… livekit.….deepgram Established new Deepgram STT        
+                                           WebSocket connection:               
+                                           {"headers": {"dg-project-id": 
+"f60a8826-40de-43e7-8374-38b640361119", "dg-request-id": 
+"019ff223-3061-7820-949d-5c8e68542aee", "Date": "Tue, 11 Aug 2026 18:43:40 
+GMT"}}
+    00:13:40.901 DEBUG… livekit.agents     session closed  
+                                         {"reason": "user_initiated", "error": 
+null}
+    00:13:40.924 DEBUG… livekit.agents     uploading session report to         
+                                           LiveKit Cloud                       
+    00:13:41.804 DEBUG… livekit.agents     finished uploading  
+    00:13:41.815 DEBUG… livekit.agents     shutting down job task  
+                                         {"reason": "job crashed", 
+"user_initiated": false}
+    00:13:41.829 DEBUG… livekit.agents     job exiting  
+                                         {"reason": "job crashed", "tid": 
+34044, "job_id": "AJ_F4KkfgpxQgk2", "room_id": "RM_C2UPhjrDeDua"}
+    00:13:41.851 DEBUG… livekit.agents     shutting down telemetry tracer      
+                                           provider                            
+    00:13:42.616 DEBUG… livekit.agents     http_session(): closing the         
+                                           httpclient ctx                      
+    00:15:43.798 INFO … livekit            livekit_ffi::cabi:50:livekit_ffi:…  
+                                           - initializing ffi server v0.12.48  
+    00:15:43.799 DEBUG… asyncio            Using proactor: IocpProactor  
+    00:15:43.817 INFO … livekit.agents     starting worker  
+                                         {"version": "1.4.5", "rtc-version": 
+"1.1.2"}
+    00:15:43.822 INFO … livekit.agents     starting inference executor  
+    00:15:43.842 INFO … livekit.agents     initializing process  
+                                         {"pid": 27748, "inference": true}
+    00:15:50.899 INFO … livekit            livekit_ffi::server:151:livekit_f…  
+                                           - initializing ffi server v0.12.48  
+    00:15:50.900 DEBUG… asyncio            Using proactor: IocpProactor  
+    00:15:50.924 INFO … livekit.agents     starting worker  
+                                         {"version": "1.4.5", "rtc-version": 
+"1.1.2"}
+    00:15:50.928 INFO … livekit.agents     starting inference executor  
+    00:15:50.951 INFO … livekit.agents     initializing process  
+                                         {"pid": 36860, "inference": true}
+    00:15:59.636 INFO … livekit.agents     process initialized  
+                                         {"pid": 36860, "inference": true, 
+"elapsed_time": 8.68}
+    00:15:59.644 INFO … livekit.agents     HTTP server listening on :54160  
+    00:15:59.727 INFO … livekit.agents     registered worker  
+                                         {"agent_name": 
+"health-reminder-agent", "id": "AW_phC83TericM2", "url": 
+"wss://voice-for-bharat-challenge-2026-s64l1jh3.livekit.cloud", "region": 
+"India South", "protocol": 17}
+    00:17:34.919 INFO … livekit.agents     received job request  
+                                         {"job_id": "AJ_fDsFYxcQLXk8", 
+"dispatch_id": "AD_jU2NrE8CiWe7", "room": "outbound-4ad95893", "room_id": 
+"RM_3KKAhcbLGPqN", "agent_name": "health-reminder-agent", "resuming": false, 
+"enable_recording": true}
+    00:17:34.944 DEBUG… livekit.agents     received assignment  
+                                         {"agent_name": 
+"health-reminder-agent", "room_id": "RM_3KKAhcbLGPqN", "room": 
+"outbound-4ad95893", "job_id": "AJ_fDsFYxcQLXk8", "dispatch_id": 
+"AD_jU2NrE8CiWe7", "enable_recording": true}
+    00:17:34.949 WARNI… livekit.agents     no warmed process available for     
+                                           job, waiting for one to be created  
+                                         {"job_id": "AJ_fDsFYxcQLXk8"}
+    00:17:34.970 INFO … livekit.agents     initializing job runner  
+                                         {"tid": 27908}
+    00:17:35.097 DEBUG… asyncio            Using proactor: IocpProactor  
+                 INFO … livekit.agents     job runner initialized  
+                                         {"tid": 27908, "elapsed_time": 0.12}
+    00:17:36.494 INFO … health-r…-outbound dialing                             
+                                           sip:amajali7849251@sip.linphone.o…  
+                                           in room outbound-4ad95893           
+    00:17:36.501 DEBUG… livekit.agents     http_session(): creating a new      
+                                           httpclient ctx                      
+    00:17:36.506 DEBUG… livekit.agents     configuring session recording  
+                                         {"hostname": 
+"voice-for-bharat-challenge-2026-s64l1jh3.ohyderabad1a.production.livekit.cloud
+"}
+    00:17:36.514 DEBUG… livekit.agents     input stream attached  
+                                         {"participant": null, "source": 
+"SOURCE_UNKNOWN", "accepted_sources": ["SOURCE_MICROPHONE"]}
+    00:17:36.518 DEBUG… livekit.agents     input stream detached  
+                                         {"participant": null, "source": 
+"SOURCE_UNKNOWN", "accepted_sources": ["SOURCE_MICROPHONE"]}
+    00:17:36.521 DEBUG… livekit.agents     input stream attached  
+                                         {"participant": null, "source": 
+"SOURCE_UNKNOWN", "accepted_sources": ["SOURCE_MICROPHONE"]}
+    00:17:36.535 DEBUG… livekit.agents     using audio io: `RoomIO` ->         
+                                           `RecorderIO` -> `AgentSession` ->   
+                                           `RecorderIO` ->                     
+                                           `TranscriptSynchronizer` ->         
+                                           `RoomIO`                            
+    00:17:36.543 DEBUG… livekit.agents     using transcript io:                
+                                           `AgentSession` ->                   
+                                           `TranscriptSynchronizer` ->         
+                                           `RoomIO`                            
+    00:17:36.715 INFO … health-r…-outbound call to                             
+                                           sip:amajali7849251@sip.linphone.o…  
+                                           failed: unknown (sip_status=0       
+                                           SipCallTo should be a phone number  
+                                           or SIP user, not a full SIP URI) —  
+                                           retry=False ('unknown' is not       
+                                           retryable)                          
+    00:17:36.736 DEBUG… livekit.agents     input stream detached  
+                                         {"participant": null, "source": 
+"SOURCE_UNKNOWN", "accepted_sources": ["SOURCE_MICROPHONE"]}
+    00:17:37.676 DEBUG… livekit.….deepgram Established new Deepgram STT        
+                                           WebSocket connection:               
+                                           {"headers": {"dg-project-id": 
+"f60a8826-40de-43e7-8374-38b640361119", "dg-request-id": 
+"019ff226-d216-7080-bb7e-3a1e457a5748", "Date": "Tue, 11 Aug 2026 18:47:38 
+GMT"}}
+    00:17:38.749 DEBUG… livekit.agents     session closed  
+                                         {"reason": "user_initiated", "error": 
+null}
+    00:17:38.767 DEBUG… livekit.agents     uploading session report to         
+                                           LiveKit Cloud                       
+    00:17:39.683 DEBUG… livekit.agents     finished uploading  
+    00:17:39.691 DEBUG… livekit.agents     shutting down job task  
+                                         {"reason": "", "user_initiated": true}
+    00:17:39.699 DEBUG… livekit.agents     job exiting  
+                                         {"reason": "", "tid": 27908, "job_id":
+"AJ_fDsFYxcQLXk8", "room_id": "RM_3KKAhcbLGPqN"}
+    00:17:39.722 DEBUG… livekit.agents     shutting down telemetry tracer      
+                                           provider                            
+    00:17:40.614 DEBUG… livekit.agents     http_session(): closing the         
+                                           httpclient ctx                      
+    00:20:20.445 INFO … livekit            livekit_ffi::server:151:livekit_f…  
+                                           - initializing ffi server v0.12.48  
+    00:20:20.447 DEBUG… asyncio            Using proactor: IocpProactor  
+    00:20:20.464 INFO … livekit.agents     starting worker  
+                                         {"version": "1.4.5", "rtc-version": 
+"1.1.2"}
+    00:20:20.469 INFO … livekit.agents     starting inference executor  
+    00:20:20.507 INFO … livekit.agents     initializing process  
+                                         {"pid": 37608, "inference": true}
+    00:20:29.277 INFO … livekit.agents     process initialized  
+                                         {"pid": 37608, "inference": true, 
+"elapsed_time": 8.76}
+    00:20:29.289 INFO … livekit.agents     HTTP server listening on :63797  
+    00:20:29.389 INFO … livekit.agents     registered worker  
+                                         {"agent_name": 
+"health-reminder-agent", "id": "AW_YF5G7228hzRX", "url": 
+"wss://voice-for-bharat-challenge-2026-s64l1jh3.livekit.cloud", "region": 
+"India South", "protocol": 17}
+    00:21:55.898 INFO … livekit            livekit_ffi::server:151:livekit_f…  
+                                           - initializing ffi server v0.12.48  
+    00:21:55.899 DEBUG… asyncio            Using proactor: IocpProactor  
+    00:21:55.923 INFO … livekit.agents     starting worker  
+                                         {"version": "1.4.5", "rtc-version": 
+"1.1.2"}
+    00:21:55.927 INFO … livekit.agents     starting inference executor  
+    00:21:55.997 INFO … livekit.agents     initializing process  
+                                         {"pid": 32284, "inference": true}
+    00:22:01.304 INFO … livekit            livekit_ffi::server:151:livekit_f…  
+                                           - initializing ffi server v0.12.48  
+    00:22:01.306 DEBUG… asyncio            Using proactor: IocpProactor  
+    00:22:01.322 INFO … livekit.agents     starting worker  
+                                         {"version": "1.4.5", "rtc-version": 
+"1.1.2"}
+    00:22:01.326 INFO … livekit.agents     starting inference executor  
+    00:22:01.347 INFO … livekit.agents     initializing process  
+                                         {"pid": 27928, "inference": true}
+    00:22:09.423 INFO … livekit.agents     process initialized  
+                                         {"pid": 27928, "inference": true, 
+"elapsed_time": 8.07}
+    00:22:09.434 INFO … livekit.agents     HTTP server listening on :58207  
+    00:22:09.521 INFO … livekit.agents     registered worker  
+                                         {"agent_name": 
+"health-reminder-agent", "id": "AW_5JaGuj7CkaYg", "url": 
+"wss://voice-for-bharat-challenge-2026-s64l1jh3.livekit.cloud", "region": 
+"India South", "protocol": 17}
+    00:22:57.676 INFO … livekit            livekit_ffi::server:151:livekit_f…  
+                                           - initializing ffi server v0.12.48  
+    00:22:57.677 DEBUG… asyncio            Using proactor: IocpProactor  
+    00:22:57.700 INFO … livekit.agents     starting worker  
+                                         {"version": "1.4.5", "rtc-version": 
+"1.1.2"}
+    00:22:57.706 INFO … livekit.agents     starting inference executor  
+    00:22:57.728 INFO … livekit.agents     initializing process  
+                                         {"pid": 2200, "inference": true}
+    00:23:05.869 INFO … livekit.agents     process initialized  
+                                         {"pid": 2200, "inference": true, 
+"elapsed_time": 8.13}
+    00:23:05.876 INFO … livekit.agents     HTTP server listening on :51994  
+    00:23:05.959 INFO … livekit.agents     registered worker  
+                                         {"agent_name": 
+"health-reminder-agent", "id": "AW_hYRFNchYyMNL", "url": 
+"wss://voice-for-bharat-challenge-2026-s64l1jh3.livekit.cloud", "region": 
+"India South", "protocol": 17}
+    00:23:46.104 INFO … livekit.agents     received job request  
+                                         {"job_id": "AJ_3KFBtLKexsi8", 
+"dispatch_id": "AD_ze92gDAo6p5w", "room": "outbound-07bf8d3f", "room_id": 
+"RM_pYHCYEG5uNgb", "agent_name": "health-reminder-agent", "resuming": false, 
+"enable_recording": true}
+    00:23:46.136 DEBUG… livekit.agents     received assignment  
+                                         {"agent_name": 
+"health-reminder-agent", "room_id": "RM_pYHCYEG5uNgb", "room": 
+"outbound-07bf8d3f", "job_id": "AJ_3KFBtLKexsi8", "dispatch_id": 
+"AD_ze92gDAo6p5w", "enable_recording": true}
+    00:23:46.143 WARNI… livekit.agents     no warmed process available for     
+                                           job, waiting for one to be created  
+                                         {"job_id": "AJ_3KFBtLKexsi8"}
+    00:23:46.150 INFO … livekit.agents     initializing job runner  
+                                         {"tid": 924}
+    00:23:46.296 DEBUG… asyncio            Using proactor: IocpProactor  
+    00:23:46.297 INFO … livekit.agents     job runner initialized  
+                                         {"tid": 924, "elapsed_time": 0.14}
+    00:23:47.756 INFO … health-r…-outbound dialing amajali7849251 in room      
+                                           outbound-07bf8d3f                   
+    00:23:47.762 DEBUG… livekit.agents     http_session(): creating a new      
+                                           httpclient ctx                      
+    00:23:47.768 DEBUG… livekit.agents     configuring session recording  
+                                         {"hostname": 
+"voice-for-bharat-challenge-2026-s64l1jh3.ohyderabad1a.production.livekit.cloud
+"}
+    00:23:47.781 DEBUG… livekit.agents     input stream attached  
+                                         {"participant": null, "source": 
+"SOURCE_UNKNOWN", "accepted_sources": ["SOURCE_MICROPHONE"]}
+    00:23:47.786 DEBUG… livekit.agents     input stream detached  
+                                         {"participant": null, "source": 
+"SOURCE_UNKNOWN", "accepted_sources": ["SOURCE_MICROPHONE"]}
+    00:23:47.790 DEBUG… livekit.agents     input stream attached  
+                                         {"participant": null, "source": 
+"SOURCE_UNKNOWN", "accepted_sources": ["SOURCE_MICROPHONE"]}
+    00:23:47.806 DEBUG… livekit.agents     using audio io: `RoomIO` ->         
+                                           `RecorderIO` -> `AgentSession` ->   
+                                           `RecorderIO` ->                     
+                                           `TranscriptSynchronizer` ->         
+                                           `RoomIO`                            
+    00:23:47.814 DEBUG… livekit.agents     using transcript io:                
+                                           `AgentSession` ->                   
+                                           `TranscriptSynchronizer` ->         
+                                           `RoomIO`                            
+    00:23:48.549 DEBUG… livekit.….deepgram Established new Deepgram STT        
+                                           WebSocket connection:               
+                                           {"headers": {"dg-project-id": 
+"f60a8826-40de-43e7-8374-38b640361119", "dg-request-id": 
+"019ff22c-7aca-7f53-a792-8ef5101076cd", "Date": "Tue, 11 Aug 2026 18:53:49 
+GMT"}}
+    00:23:48.859 INFO … health-r…-outbound call to amajali7849251 failed:      
+                                           unknown (sip_status=0 twirp error   
+                                           unknown: invalid From header:       
+                                           should be a phone number or SIP     
+                                           user, not a full SIP URI) —         
+                                           retry=False ('unknown' is not       
+                                           retryable)                          
+    00:23:48.877 DEBUG… livekit.agents     input stream detached  
+                                         {"participant": null, "source": 
+"SOURCE_UNKNOWN", "accepted_sources": ["SOURCE_MICROPHONE"]}
+    00:23:50.890 DEBUG… livekit.agents     session closed  
+                                         {"reason": "user_initiated", "error": 
+null}
+    00:23:50.898 DEBUG… livekit.agents     uploading session report to         
+                                           LiveKit Cloud                       
+    00:23:51.117 ERROR… asyncio            Exception in callback               
+                                           _ProactorBasePipeTransport._call_…  
+                                           handle: <Handle                     
+                                           _ProactorBasePipeTransport._call_…  
+Traceback (most recent call last):
+  File "C:\Python314\Lib\asyncio\events.py", line 94, in _run
+    self._context.run(self._callback, *self._args)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\asyncio\proactor_events.py", line 165, in 
+_call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+ConnectionResetError: [WinError 10054] An existing connection was forcibly 
+closed by the remote host
+    00:23:51.215 DEBUG… livekit.agents     finished uploading  
+    00:23:51.222 DEBUG… livekit.agents     shutting down job task  
+                                         {"reason": "", "user_initiated": true}
+    00:23:51.232 DEBUG… livekit.agents     job exiting  
+                                         {"reason": "", "tid": 924, "job_id": 
+"AJ_3KFBtLKexsi8", "room_id": "RM_pYHCYEG5uNgb"}
+    00:23:51.251 DEBUG… livekit.agents     shutting down telemetry tracer      
+                                           provider                            
+    00:23:52.095 DEBUG… livekit.agents     http_session(): closing the         
+                                           httpclient ctx                      
+    00:25:12.323 INFO … livekit.agents     received job request  
+                                         {"job_id": "AJ_P4JXZyKBG44U", 
+"dispatch_id": "AD_9cWqrQkSM7Ri", "room": "outbound-d01226e4", "room_id": 
+"RM_MeKhTUjZSvFx", "agent_name": "health-reminder-agent", "resuming": false, 
+"enable_recording": true}
+    00:25:12.354 DEBUG… livekit.agents     received assignment  
+                                         {"agent_name": 
+"health-reminder-agent", "room_id": "RM_MeKhTUjZSvFx", "room": 
+"outbound-d01226e4", "job_id": "AJ_P4JXZyKBG44U", "dispatch_id": 
+"AD_9cWqrQkSM7Ri", "enable_recording": true}
+    00:25:12.363 WARNI… livekit.agents     no warmed process available for     
+                                           job, waiting for one to be created  
+                                         {"job_id": "AJ_P4JXZyKBG44U"}
+    00:25:12.374 INFO … livekit.agents     initializing job runner  
+                                         {"tid": 16308}
+    00:25:12.482 INFO … livekit.agents     job runner initialized  
+                                         {"tid": 16308, "elapsed_time": 0.1}
+                 DEBUG… asyncio            Using proactor: IocpProactor  
+    00:25:13.760 INFO … health-r…-outbound dialing amajali7849251 in room      
+                                           outbound-d01226e4                   
+    00:25:13.767 DEBUG… livekit.agents     http_session(): creating a new      
+                                           httpclient ctx                      
+    00:25:13.773 DEBUG… livekit.agents     configuring session recording  
+                                         {"hostname": 
+"voice-for-bharat-challenge-2026-s64l1jh3.ohyderabad1a.production.livekit.cloud
+"}
+    00:25:13.779 DEBUG… livekit.agents     input stream attached  
+                                         {"participant": null, "source": 
+"SOURCE_UNKNOWN", "accepted_sources": ["SOURCE_MICROPHONE"]}
+    00:25:13.784 DEBUG… livekit.agents     input stream detached  
+                                         {"participant": null, "source": 
+"SOURCE_UNKNOWN", "accepted_sources": ["SOURCE_MICROPHONE"]}
+    00:25:13.787 DEBUG… livekit.agents     input stream attached  
+                                         {"participant": null, "source": 
+"SOURCE_UNKNOWN", "accepted_sources": ["SOURCE_MICROPHONE"]}
+    00:25:13.795 DEBUG… livekit.agents     using audio io: `RoomIO` ->         
+                                           `RecorderIO` -> `AgentSession` ->   
+                                           `RecorderIO` ->                     
+                                           `TranscriptSynchronizer` ->         
+                                           `RoomIO`                            
+    00:25:13.803 DEBUG… livekit.agents     using transcript io:                
+                                           `AgentSession` ->                   
+                                           `TranscriptSynchronizer` ->         
+                                           `RoomIO`                            
+    00:25:14.435 INFO … health-r…-outbound call to amajali7849251 failed:      
+                                           unknown (sip_status=0 twirp error   
+                                           unknown: invalid From header:       
+                                           should be a phone number or SIP     
+                                           user, not a full SIP URI) —         
+                                           retry=False ('unknown' is not       
+                                           retryable)                          
+    00:25:14.464 DEBUG… livekit.agents     input stream detached  
+                                         {"participant": null, "source": 
+"SOURCE_UNKNOWN", "accepted_sources": ["SOURCE_MICROPHONE"]}
+    00:25:14.599 DEBUG… livekit.….deepgram Established new Deepgram STT        
+                                           WebSocket connection:               
+                                           {"headers": {"dg-project-id": 
+"f60a8826-40de-43e7-8374-38b640361119", "dg-request-id": 
+"019ff22d-caf7-7b40-ba66-7f0ef1882d54", "Date": "Tue, 11 Aug 2026 18:55:15 
+GMT"}}
+    00:25:16.478 DEBUG… livekit.agents     session closed  
+                                         {"reason": "user_initiated", "error": 
+null}
+    00:25:16.488 DEBUG… livekit.agents     uploading session report to         
+                                           LiveKit Cloud                       
+    00:25:16.848 DEBUG… livekit.agents     finished uploading  
+    00:25:16.858 DEBUG… livekit.agents     shutting down job task  
+                                         {"reason": "", "user_initiated": true}
+    00:25:16.865 DEBUG… livekit.agents     job exiting  
+                                         {"reason": "", "tid": 16308, "job_id":
+"AJ_P4JXZyKBG44U", "room_id": "RM_MeKhTUjZSvFx"}
+    00:25:16.887 DEBUG… livekit.agents     shutting down telemetry tracer      
+                                           provider                            
+    00:25:17.682 DEBUG… livekit.agents     http_session(): closing the         
+                                           httpclient ctx                      
+    00:26:31.067 WARNI… watchfiles.main    process already dead, exit code: 1  
+    00:26:35.689 INFO … livekit            livekit_ffi::server:151:livekit_f…  
+                                           - initializing ffi server v0.12.48  
+    00:26:35.690 DEBUG… asyncio            Using proactor: IocpProactor  
+    00:26:35.708 INFO … livekit.agents     starting worker  
+                                         {"version": "1.4.5", "rtc-version": 
+"1.1.2"}
+    00:26:35.716 INFO … livekit.agents     starting inference executor  
+    00:26:35.741 INFO … livekit.agents     initializing process  
+                                         {"pid": 14744, "inference": true}
+    00:26:43.789 INFO … livekit.agents     process initialized  
+                                         {"pid": 14744, "inference": true, 
+"elapsed_time": 8.04}
+    00:26:43.798 INFO … livekit.agents     HTTP server listening on :56914  
+    00:26:43.878 INFO … livekit.agents     registered worker  
+                                         {"agent_name": 
+"health-reminder-agent", "id": "AW_eWUws3jCMtWv", "url": 
+"wss://voice-for-bharat-challenge-2026-s64l1jh3.livekit.cloud", "region": 
+"India South", "protocol": 17}
+    00:32:42.673 ERROR… livekit.agents     process is unresponsive, killing    
+                                           process                             
+                                         {"pid": 14744, "inference": true}
+    00:32:42.695 INFO … livekit.agents     killing process  
+                                         {"pid": 14744, "inference": true}
+    00:33:28.874 WARNI… livekit.agents     unexpected message type: 258  
+    00:33:28.886 WARNI… livekit.agents     failed to connect to livekit,       
+                                           retrying in 0s                      
+Traceback (most recent call last):
+  File 
+"C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Li
+b\site-packages\livekit\agents\worker.py", line 1011, in _connection_task
+    await self._run_ws(ws)
+  File 
+"C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Li
+b\site-packages\livekit\agents\worker.py", line 1093, in _run_ws
+    await asyncio.gather(*tasks)
+  File 
+"C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend\.venv\Li
+b\site-packages\livekit\agents\worker.py", line 1065, in _recv_task
+    raise Exception("worker connection closed unexpectedly")
+Exception: worker connection closed unexpectedly
+    00:33:28.990 INFO … livekit.agents     registered worker  
+                                         {"agent_name": 
+"health-reminder-agent", "id": "AW_cf2iuZ84i8AF", "url": 
+"wss://voice-for-bharat-challenge-2026-s64l1jh3.livekit.cloud", "region": 
+"India South", "protocol": 17}
+    00:35:47.843 INFO … livekit            livekit_ffi::server:151:livekit_f…  
+                                           - initializing ffi server v0.12.48  
+    00:35:47.844 DEBUG… asyncio            Using proactor: IocpProactor  
+    00:35:47.867 INFO … livekit.agents     starting worker  
+                                         {"version": "1.4.5", "rtc-version": 
+"1.1.2"}
+    00:35:47.874 INFO … livekit.agents     starting inference executor  
+    00:35:47.923 INFO … livekit.agents     initializing process  
+                                         {"pid": 12580, "inference": true}
+    00:35:56.803 INFO … livekit.agents     process initialized  
+                                         {"pid": 12580, "inference": true, 
+"elapsed_time": 8.87}
+    00:35:56.810 INFO … livekit.agents     HTTP server listening on :60663  
+    00:35:56.881 INFO … livekit.agents     registered worker  
+                                         {"agent_name": 
+"health-reminder-agent", "id": "AW_DJxLndaHELNc", "url": 
+"wss://voice-for-bharat-challenge-2026-s64l1jh3.livekit.cloud", "region": 
+"India South", "protocol": 17}

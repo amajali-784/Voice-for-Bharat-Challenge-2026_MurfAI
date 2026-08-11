@@ -19,6 +19,12 @@ OpenStreetMap when reachable, with a curated offline fallback list and a
 graceful spoken message when the data source is down (`facilities.py`).  The
 agent chains this with Day 4 memory: it uses the caller's saved village/district
 instead of asking again.
+
+Day 7 adds: knowing when to ask a human for help.  `create_escalation` files a
+short, useful request for a health worker when the caller reports a red-flag
+symptom or asks for a diagnosis.  The agent asks permission before sharing
+anything, sanitises private details, gives the caller a reference ID, and never
+duplicates an already-open request (`escalation.py`).
 """
 
 import asyncio
@@ -40,6 +46,8 @@ from livekit.agents.tokenize.basic import SentenceTokenizer
 from livekit.plugins import deepgram, google, murf, silero
 from livekit.plugins.turn_detector.multilingual import MultilingualModel
 
+from escalation import DEFAULT_DB_PATH as ESCALATION_DB_PATH
+from escalation import EscalationStore, sanitize_summary
 from facilities import lookup_health_facilities
 from memory import DEFAULT_DB_PATH, CallerStore
 
@@ -51,6 +59,10 @@ load_dotenv(dotenv_path=Path(__file__).parent.parent / ".env.local")
 # One shared store for all worker sessions.  SQLite + WAL handles concurrent
 # sessions fine; each tool call opens a short-lived connection.
 MEMORY_STORE = CallerStore(DEFAULT_DB_PATH)
+
+# Human-help requests (Day 7) — short summaries for a health worker, not the
+# full conversation.
+ESCALATION_STORE = EscalationStore(ESCALATION_DB_PATH)
 
 # ---------------------------------------------------------------------------
 # SYSTEM PROMPT — Health Access track, Day 5
@@ -112,7 +124,7 @@ LANGUAGE (कोड-मिश्रित भाषा को संभालन
 
 MEMORY (याददाश्त — कॉल के बीच में)
 - आपके पास ये उपकरण हैं: lookup_caller, save_caller_info, add_note, forget_caller,
-  और find_nearby_health_facilities (TOOLS section देखें)।
+  find_nearby_health_facilities, और create_escalation (ESCALATION section देखें)।
 - बातचीत शुरू होते ही lookup_caller से देखें कि यह कॉलर पहले बात कर चुका है या नहीं।
 - जब कॉलर अपना नाम, उम्र, शहर/गाँव, फोन नंबर, पुरानी बीमारियाँ (conditions), चल रही
   दवाइयाँ (medications), या एलर्जी बताए — तो save_caller_info से उसे याद रखें।
@@ -135,6 +147,32 @@ GUARDRAILS (सख्त नियम — कभी न तोड़ें)
   बातचीत जारी न रखें, एस्केलेशन को दोहराएँ अगर ज़रूरत हो।
 - स्वास्थ्य से बाहर के अनुरोध (जैसे पैसे, कानूनी सलाह, या असंबंधित काम) को विनम्रता से
   मना करें और बताएं कि आप केवल स्वास्थ्य से जुड़ी जानकारी में मदद कर सकते हैं।
+
+ESCALATION (मानव सहायता — create_escalation)
+- जब नीचे की दो स्थितियों में से कोई हो, तो किसी इंसान (हेल्थ वर्कर) के लिए एक अनुरोध
+  बनाने की पेशकश करें:
+  1. red-flag / गंभीर लक्षण (सीने में दर्द, साँस लेने में तकलीफ़, बेहोशी, तेज़ खून
+     बहना, आधे शरीर में कमज़ोरी/लकवा, बच्चे में तेज़ बुखार के साथ सुस्ती, आत्महत्या के
+     विचार): पहले 108 या नज़दीकी अस्पताल तुरंत जाने को कहें। फिर पूछें कि क्या आप एक
+     हेल्थ वर्कर को छोटी-सी सूचना भेज सकते हैं, जो उनसे संपर्क कर सके।
+  2. निदान की माँग (जैसे "मुझे कौन-सी बीमारी है?", "डॉक्टर क्या कहेंगे?"): साफ़ कहें
+     कि आप निदान नहीं कर सकते, और ऑफ़र करें कि एक हेल्थ वर्कर उन्हें फिर कॉल कर सकता है।
+- create_escalation केवल caller_consent=True के साथ कॉल करें — यानी कॉलर ने साफ़ तौर
+  पर हाँ कही हो। अगर वे मना करें, तो अनुरोध बिल्कुल न बनाएं; विनम्रता से 108 / डॉक्टर /
+  PHC जैसे सुझाव दें।
+- summary सिर्फ़ 2-3 छोटे वाक्य: क्या हुआ (लक्षण, कब से, किसे)। checked में बताएं कि
+  आपने पहले क्या जाँचा (जैसे lookup_caller, find_nearby_health_facilities)।
+  summary/checked में कभी फ़ोन नंबर, OTP, PIN, पासवर्ड, Aadhaar, खाता या कार्ड नंबर
+  न डालें — सिर्फ़ नाम, लक्षण और इलाका काफ़ी है।
+- category: "red_flag_symptom" या "diagnosis_request"। urgency: "low" | "medium" |
+  "high" | "emergency" — गंभीर लक्षणों के लिए "high" या "emergency", निदान माँग के लिए
+  "low" या "medium"।
+- followup में बताएं कि कॉलर कैसे जुड़ना चाहेगा (फिर कॉल, वॉइस/टेक्स्ट मैसेज, आदि) और
+  language में कॉलर की भाषा।
+- अनुरोध बनने के बाद कॉलर को reference_id (जैसे ESC-AB12CD) बताएं और ईमानदार अगला कदम:
+  "हमारी हेल्थ टीम जल्द आपसे संपर्क करेगी" — कभी यह न कहें कि इंसान तुरंत जवाब देगा या
+  यह आपातकालीन मदद है (emergency के लिए 108 ही सही रास्ता है)।
+- सामान्य सलाह कॉल में कभी अनुरोध न बनाएं — सिर्फ़ ऊपर की दो स्थितियों में।
 
 STYLE
 - छोटे, स्पष्ट वाक्य — यह एक फोन कॉल है, निबंध नहीं। एक बार में एक ही बात पूछें।
@@ -164,6 +202,13 @@ class Assistant(Agent):
             return ctx.userdata.get("store", MEMORY_STORE)
         except ValueError:
             return MEMORY_STORE
+
+    def _escalations(self, ctx: RunContext) -> EscalationStore:
+        """The escalation store, overridable for tests via userdata."""
+        try:
+            return ctx.userdata.get("escalations", ESCALATION_STORE)
+        except ValueError:
+            return ESCALATION_STORE
 
     def _caller_id(self, ctx: RunContext) -> str:
         try:
@@ -326,6 +371,98 @@ class Assistant(Agent):
         result = await lookup_health_facilities(location, facility_type)
         result["caller_location"] = location
         return result
+
+    @function_tool
+    async def create_escalation(
+        self,
+        ctx: RunContext,
+        category: str,
+        summary: str,
+        caller_consent: bool,
+        urgency: str = "medium",
+        checked: str = "",
+        followup: str = "",
+        language: str = "",
+    ) -> dict:
+        """File a short, useful request for a human health worker.
+
+        Use this ONLY in two situations, and ONLY after the caller has clearly
+        agreed:
+
+        1. The caller reported a red-flag symptom (chest pain, trouble
+           breathing, fainting, heavy bleeding, stroke-like weakness, a
+           dangerously drowsy child, or thoughts of self-harm). First tell
+           them to call 108 / go to a hospital immediately, then offer to send
+           a brief note to a health worker who can follow up.
+        2. The caller is asking for a diagnosis ("what disease do I have?").
+           Explain you cannot diagnose, then offer a health-worker callback.
+
+        Set caller_consent=True only when the caller explicitly said yes. If
+        they decline, do NOT call this tool. If called without consent, no
+        request is created.
+
+        The summary must be 2-3 short sentences: what happened, since when, and
+        for whom. Put what you already checked (lookup_caller, facility
+        lookup, etc.) in `checked`. NEVER include phone numbers, OTPs, PINs,
+        passwords, Aadhaar, or bank/card numbers — the summary is scrubbed
+        anyway, but you must not write them in the first place.
+
+        Returns the reference_id (e.g. "ESC-AB12CD") to read back to the
+        caller, plus an honest next step and the current status.
+
+        Args:
+            category: "red_flag_symptom" or "diagnosis_request".
+            summary: A short, sanitised description of what happened.
+            caller_consent: True only if the caller explicitly agreed to share.
+            urgency: "low", "medium", "high", or "emergency".
+            checked: What the agent already checked before escalating.
+            followup: How the caller wants to be reached (call back, message…).
+            language: The caller's language.
+        """
+        if not caller_consent:
+            return {
+                "created": False,
+                "reference_id": None,
+                "message": (
+                    "The caller has not agreed to share their information. Ask "
+                    "for permission first, and only call again once they say yes."
+                ),
+            }
+
+        store = self._store(ctx)
+        caller_id = self._caller_id(ctx)
+        profile = store.get(caller_id) or {}
+
+        request = {
+            "caller_id": caller_id,
+            "caller_name": profile.get("name"),
+            "category": category,
+            "urgency": urgency,
+            "summary": sanitize_summary(summary),
+            "checked": sanitize_summary(checked),
+            "followup": followup,
+            "language": language,
+        }
+        created = self._escalations(ctx).create(request)
+        logger.info(
+            "escalation %s created for caller %s (category=%s, urgency=%s)",
+            created["reference_id"],
+            caller_id,
+            category,
+            urgency,
+        )
+        return {
+            "created": True,
+            "reference_id": created["reference_id"],
+            "duplicate": created.get("duplicate", False),
+            "status": created["status"],
+            "message": (
+                "Request filed with reference "
+                + created["reference_id"]
+                + ". Tell the caller this ID and that the health team will "
+                "reach out shortly; do not promise an immediate reply."
+            ),
+        }
 
 
 def prewarm(proc: JobProcess) -> None:
