@@ -1,12 +1,15 @@
 """Trigger an outbound health-reminder call.
 
 The outbound agent doesn't call anyone on its own — it waits to be dispatched
-into a room with a phone number in the job metadata. This script does that
-dispatch.
+into a room with a phone number in the job metadata. This script sends the
+dispatch request to the Twilio bridge (twilio_bridge.py), which uses the
+LiveKit Twilio Connector + Twilio Programmable Voice so the call works on a
+free trial account.
 
-Make sure the worker is running first:
+Make sure the worker and the bridge are running first (two terminals):
 
     uv run python src/telephony/outbound/agent.py dev
+    uv run python src/telephony/outbound/twilio_bridge.py
 
 Then place a call (E.164 number, e.g. +919876543210):
 
@@ -20,26 +23,28 @@ Optional caller/reminder context (the agent opens with these):
 
 This is the scriptable equivalent of:
 
-    lk dispatch create --agent-name health-reminder-agent --room my-room \\
-      --metadata '{"phone_number": "+919876543210"}'
+    curl -X POST http://127.0.0.1:8899/place \
+        -H "Content-Type: application/json" \
+        -d '{"to": "+919876543210"}'
 """
 
 from __future__ import annotations
 
 import argparse
-import asyncio
 import json
+import os
 import re
 import sys
 import uuid
 
+import httpx
 from dotenv import load_dotenv
-from livekit import api
 
 load_dotenv(".env.local")
 
-# Must match the agent_name in agent.py.
-AGENT_NAME = "health-reminder-agent"
+# The Twilio bridge (src/telephony/outbound/twilio_bridge.py). Override with
+# TWILIO_BRIDGE_URL if the bridge runs elsewhere.
+BRIDGE_URL = os.getenv("TWILIO_BRIDGE_URL", "http://127.0.0.1:8899")
 
 # E.164: a leading + and 7-15 digits, e.g. +919876543210.
 E164 = re.compile(r"^\+[1-9]\d{6,14}$")
@@ -66,20 +71,14 @@ def build_metadata(args: argparse.Namespace) -> str:
     return json.dumps(meta, ensure_ascii=False)
 
 
-async def dial(phone_number: str, room_name: str, metadata: str) -> None:
-    """Create the room and dispatch the outbound agent into it."""
-    lk = api.LiveKitAPI()
-    try:
-        await lk.room.create_room(api.CreateRoomRequest(name=room_name))
-        await lk.agent_dispatch.create_dispatch(
-            api.CreateAgentDispatchRequest(
-                agent_name=AGENT_NAME,
-                room=room_name,
-                metadata=metadata,
-            )
-        )
-    finally:
-        await lk.aclose()
+def dial(phone_number: str, room_name: str, metadata: str) -> None:
+    """Ask the Twilio bridge to place the call (LiveKit connector + Twilio)."""
+    payload = json.loads(metadata)
+    payload["room"] = room_name
+    r = httpx.post(f"{BRIDGE_URL}/place", json=payload, timeout=60)
+    if r.status_code >= 400:
+        sys.exit(f"bridge returned {r.status_code}: {r.text}")
+    print(r.json().get("message", r.text))
 
 
 def main() -> None:
@@ -119,10 +118,9 @@ def main() -> None:
     metadata = build_metadata(args)
     room_name = args.room or f"outbound-{uuid.uuid4().hex[:8]}"
 
-    asyncio.run(dial(args.to, room_name, metadata))
-
-    print(f"Dispatched {AGENT_NAME} to room '{room_name}' to call {args.to}.")
-    print("Your phone will ring in ~5 s. Watch the worker terminal for progress.")
+    dial(args.to, room_name, metadata)
+    print(f"Sent to bridge for room '{room_name}' to call {args.to}.")
+    print("Your phone will ring shortly. Watch the worker terminal for progress.")
 
 
 if __name__ == "__main__":
