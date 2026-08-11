@@ -1,6 +1,6 @@
 # स्वास्थ्य सहायक (Swasthya Sahayak) — Voice Agent Starter, Powered by Murf Falcon
 
-Built for **10 Days of AI Voice Agents — #VoiceForBharat Edition**, Day 5.
+Built for **10 Days of AI Voice Agents — #VoiceForBharat Edition**, Day 6.
 
 **Track:** Health Access
 
@@ -23,6 +23,7 @@ Forked from the original [Murf LiveKit Starter](https://github.com/murf-ai/murf-
 - Always defers to a real doctor or the **108** emergency line for anything serious.
 - **Remembers returning callers** (name, village, conditions, medicines, allergies) via a SQLite-backed memory store, so a second call doesn't start from zero.
 - Forgets everything on request — the caller can ask to be erased, and an admin page lists what's remembered.
+- **Makes outbound calls** — instead of only answering, the agent dials out to remind people about a medication, vaccination, or follow-up. Every call opens with *who is calling, why, and how to stop the calls* ("कॉल बंद करो"), and an opt-out is recorded forever so the agent never calls again.
 
 ---
 
@@ -102,6 +103,8 @@ Create `.env.local` in both `backend/` and `frontend/` (copy from `.env.example`
 | `GOOGLE_API_KEY` (or `OPENAI_API_KEY`) | Google AI Studio (Gemini is the default LLM here)         | Yes      |
 | `MEMORY_API_PORT` / `MEMORY_API_HOST`  | Optional — admin API port/host (default `8700`, `127.0.0.1`) | No |
 | `NEXT_PUBLIC_MEMORY_API_URL`           | Frontend only — admin API base URL (default `http://localhost:8700`) | No |
+| `LIVEKIT_SIP_OUTBOUND_TRUNK_ID`        | `lk sip outbound create` (Twilio Elastic SIP Trunk) — Day 6 | Only for outbound |
+| `TWILIO_PHONE_NUMBER`                  | Your Twilio number, used as caller ID (Day 6) | Only for outbound |
 
 > ⚠️ `LIVEKIT_URL` must be your **actual** project URL (e.g. `wss://my-app-ab12cd34.livekit.cloud`), not the `your-project.livekit.cloud` placeholder from `.env.example`.
 
@@ -150,6 +153,54 @@ cd frontend && pnpm dev
 ```
 
 Then open **http://localhost:3000**. Click **बातचीत शुरू करें** (Start talking), allow microphone access, and speak in Hindi — the agent replies with Murf Falcon TTS. Visit **http://localhost:3000/admin** to see which callers the agent remembers, and use the **Forget** button to erase a caller's record.
+
+---
+
+## Day 6 — Outbound calls: the agent dials *you*
+
+The health assistant stops waiting for calls and starts placing them. Health
+Access use case: a **medication / vaccination reminder** and a gentle follow-up
+on how the person is doing, chained to the Day 4 caller memory and the Day 5
+facility lookup.
+
+```
+dial.py --to +919876543210
+  → LiveKit: create room + dispatch (phone + reminder metadata)
+    → health-reminder-agent worker (backend/src/telephony/outbound/)
+      → session.start() (models warm up while it rings)
+        → create_sip_participant (LiveKit outbound trunk → Twilio → PSTN)
+          → phone rings → person answers
+            → agent speaks the opening (who / why / opt-out)
+              → reminder conversation → opt_out or end_call
+```
+
+- **`backend/src/telephony/outbound/agent.py`** — the outbound worker.
+  `HealthReminderAgent` reuses the Day 4 `Assistant` (memory + facility tools)
+  and adds three tools: `opt_out` (records "never call again" in memory),
+  `end_call` (polite hang-up), `detected_voicemail` (leave nothing, don't retry).
+  The **opening is spoken deterministically** — who is calling, why, and how to
+  stop the calls — so it can never be skipped by the LLM.
+- **`backend/src/telephony/outbound/dial.py`** — the trigger: a CLI that creates
+  a room and dispatches the worker with the number + reminder metadata.
+- **`backend/src/telephony/outbound/outcome.py`** — maps SIP call status to an
+  outcome (`answered`, `no_answer`, `busy`, `declined`, `voicemail`,
+  `opted_out`, …), applies the retry rule (no_answer/busy/trunk_failure retried
+  once after 10 min), and appends a JSON line per attempt to
+  `backend/logs/outcomes.jsonl`.
+- **Setup:** Twilio **Elastic SIP Trunk** → LiveKit **outbound trunk**
+  (`lk sip outbound create --address <your-trunk>.pstn.twilio.com --number <Twilio number>`).
+  Full steps in `backend/src/telephony/outbound/README.md`.
+
+### Run an outbound call
+
+```bash
+cd backend
+uv run python src/telephony/outbound/agent.py dev        # Terminal 1 — worker
+uv run python src/telephony/outbound/dial.py --to +919876543210   # Terminal 2 — dial
+```
+
+Requires `LIVEKIT_SIP_OUTBOUND_TRUNK_ID` (+ optional `TWILIO_PHONE_NUMBER`
+caller ID, `SIP_RINGING_TIMEOUT`) in `backend/.env.local`.
 
 ---
 
@@ -280,7 +331,9 @@ voice-for-bharat-challenge-2026/
 │   │   ├── agent.py         # Health Access system prompt + memory/facility tools + Anisha pipeline
 │   │   ├── memory.py        # SQLite CallerStore — persistent caller memory
 │   │   ├── facilities.py    # Day 5 — live OSM + offline health-facility lookup
-│   │   └── memory_api.py    # Admin API (GET/DELETE callers) on :8700
+│   │   ├── memory_api.py    # Admin API (GET/DELETE callers) on :8700
+│   │   └── telephony/
+│   │       └── outbound/    # Day 6 — agent.py (outbound worker), dial.py, outcome.py
 │   ├── tests/               # Pytest: memory store, tools, and agent evals
 │   ├── .env.example
 │   ├── pyproject.toml
