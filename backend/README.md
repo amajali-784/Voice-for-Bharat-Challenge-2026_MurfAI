@@ -64,6 +64,23 @@ uv run python src/agent.py console
 uv run python src/agent.py start
 ```
 
+### 5. Admin / analytics dashboards (optional)
+
+Each feature ships its own tiny stdlib HTTP API that the frontend pages read:
+
+```bash
+uv run python src/memory_api.py      # :8700 — remembered callers (/admin)
+uv run python src/escalation_api.py  # :8701 — human-help requests (/escalations)
+uv run python src/analytics_api.py   # :8702 — call analytics (/analytics)
+```
+
+The analytics API (`src/analytics_api.py`) returns anonymised call outcomes recorded by the
+agent at the end of every call — total / successful / failed calls, per-channel and per-failure
+breakdowns, a daily trend and recent calls. Only counts, timings and tool names are stored;
+caller ids are SHA-256 hashed and no transcript, name, phone or OTP is ever written to the
+`call_analytics.db` file. Success is defined in the Health Access sense: the caller received
+safe guidance or an appropriate escalation (see the module docstring in `src/analytics.py`).
+
 ## Configuration
 
 All configuration lives in [`src/agent.py`](src/agent.py).
@@ -215,13 +232,18 @@ docker run --env-file .env.local murf-voice-agent
 ```
 backend/
 ├── src/
-│   └── agent.py          # Agent entrypoint — pipeline, prompt, config
-├── tests/
-│   └── test_agent.py     # LLM-judged eval suite
-├── .env.example           # Environment variable template
-├── pyproject.toml         # Python dependencies (uv)
-├── Dockerfile             # Production container
-└── railway.toml           # Railway deploy config
+│   ├── agent.py            # Agent entrypoint — pipeline, prompt, config
+│   ├── memory.py           # Caller memory store + memory_api.py admin API (Day 4)
+│   ├── facilities.py       # Nearby health-facility lookup (Day 5)
+│   ├── escalation.py       # Human-help escalation store + escalation_api.py (Day 7)
+│   ├── analytics.py        # Anonymised call-outcome store + analytics_api.py (Day 8)
+│   └── telephony/          # Outbound SIP calling (Day 6)
+├── tests/                  # LLM-judged evals + unit tests (test_agent, test_memory,
+│   │                       #  test_facilities, test_escalation, test_analytics)
+├── .env.example            # Environment variable template
+├── pyproject.toml          # Python dependencies (uv)
+├── Dockerfile              # Production container
+└── railway.toml            # Railway deploy config
 ```
 
 ## Links
@@ -234,16 +256,3 @@ backend/
 ## License
 
 MIT — see [LICENSE](LICENSE).
-e "Sunita Devi" --reminder medication --medication मधुमेह
-Dispatched health-reminder-agent into room 'outbound-87cddbf7' to call amajali7849251.
-Your Linphone app will ring shortly. Watch the worker terminal.
-PS C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend> uv run python src/telephony/outbound/dial.py --to amajali7849251
-Dispatched health-reminder-agent into room 'outbound-ead2b00f' to call amajali7849251.
-Your Linphone app will ring shortly. Watch the worker terminal.
-PS C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend> uv run python src/telephony/outbound/dial.py --to amajali7849251 --name "Sunita Devi" --reminder medication --medication मधुमेह  
-Dispatched health-reminder-agent into room 'outbound-ff4c41b7' to call amajali7849251.
-Your Linphone app will ring shortly. Watch the worker terminal.
-PS C:\Users\ankus\Downloads\Murf\voice-for-bharat-challenge-2026\backend> 
-
-
-uv run python src/telephony/outbound/dial.py --to amajali7849251

@@ -27,6 +27,7 @@ Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$re
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$repoRoot\frontend'; pnpm dev"
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$repoRoot\backend'; uv run python src/memory_api.py"
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$repoRoot\backend'; uv run python src/escalation_api.py"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$repoRoot\backend'; uv run python src/analytics_api.py"
 
 
 

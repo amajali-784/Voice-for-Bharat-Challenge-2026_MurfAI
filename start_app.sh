@@ -11,5 +11,6 @@ fi
 (cd frontend && pnpm dev) &
 (cd backend && uv run python src/memory_api.py) &
 (cd backend && uv run python src/escalation_api.py) &
+(cd backend && uv run python src/analytics_api.py) &
 # Wait for all background jobs
 wait

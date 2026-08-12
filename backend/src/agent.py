@@ -25,10 +25,18 @@ short, useful request for a health worker when the caller reports a red-flag
 symptom or asks for a diagnosis.  The agent asks permission before sharing
 anything, sanitises private details, gives the caller a reference ID, and never
 duplicates an already-open request (`escalation.py`).
+
+Day 8 adds: call analytics.  When a call ends, the entrypoint records its
+outcome (success/failed + why) into an anonymised SQLite store (`analytics.py`)
+and an admin HTTP API (`analytics_api.py`) feeds a frontend dashboard.  Only
+counts, timings and tool names are stored — never transcripts or private data.
 """
 
 import asyncio
 import logging
+import time
+import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -46,6 +54,8 @@ from livekit.agents.tokenize.basic import SentenceTokenizer
 from livekit.plugins import deepgram, google, murf, silero
 from livekit.plugins.turn_detector.multilingual import MultilingualModel
 
+from analytics import DEFAULT_DB_PATH as ANALYTICS_DB_PATH
+from analytics import CallRecordStore, build_call_record
 from escalation import DEFAULT_DB_PATH as ESCALATION_DB_PATH
 from escalation import EscalationStore, sanitize_summary
 from facilities import lookup_health_facilities
@@ -63,6 +73,14 @@ MEMORY_STORE = CallerStore(DEFAULT_DB_PATH)
 # Human-help requests (Day 7) — short summaries for a health worker, not the
 # full conversation.
 ESCALATION_STORE = EscalationStore(ESCALATION_DB_PATH)
+
+# Call analytics (Day 8) — anonymised call outcomes for the dashboard.
+ANALYTICS_STORE = CallRecordStore(ANALYTICS_DB_PATH)
+
+
+def _utc_now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
 
 # ---------------------------------------------------------------------------
 # SYSTEM PROMPT — Health Access track, Day 5
@@ -121,6 +139,14 @@ LANGUAGE (कोड-मिश्रित भाषा को संभालन
   जवाब दें, हिंदी में नहीं।
 - अगर भाषा बिल्कुल समझ न आए, तो विनम्रता से पूछें: "क्षमा करें, क्या आप दोबारा बता सकते हैं?"
 - हमेशा सम्मानजनक "आप" का प्रयोग करें, "तुम" का नहीं।
+
+LANGUAGE & SCRIPT (हर भाषा अपनी लिपि में)
+- हर भाषा को हमेशा उसकी अपनी मूल लिपि में लिखें।
+- हिंदी → देवनागरी (नमस्ते), कभी रोमन में नहीं (कभी "namaste" न लिखें)।
+- यही नियम हर गैर-अंग्रेज़ी भाषा पर लागू होता है (तमिल → तमिल लिपि, बांग्ला → बांग्ला
+  लिपि, आदि)।
+- अंग्रेज़ी हमेशा लैटिन लिपि में। सिर्फ़ तभी रोमन में लिखें जब कॉलर ने खुद साफ़ तौर पर
+  रोमन (जैसे "namaste") में लिखने को कहा हो।
 
 MEMORY (याददाश्त — कॉल के बीच में)
 - आपके पास ये उपकरण हैं: lookup_caller, save_caller_info, add_note, forget_caller,
@@ -489,6 +515,8 @@ async def resolve_caller_id(ctx: JobContext) -> str:
 async def entrypoint(ctx: JobContext):
     await ctx.connect()
 
+    call_started_monotonic = time.monotonic()
+    call_started_at = _utc_now_iso()
     caller_id = await resolve_caller_id(ctx)
     profile = MEMORY_STORE.get(caller_id)
     is_returning = bool(profile and profile.get("name"))
@@ -509,6 +537,33 @@ async def entrypoint(ctx: JobContext):
     )
 
     agent = Assistant(instructions=SYSTEM_PROMPT)
+
+    async def _record_call(_reason: str) -> None:
+        """Day 8: write this call's anonymised outcome into the analytics
+        store when the job shuts down.  Never raises — a failed recording
+        must not break shutdown."""
+        try:
+            record = build_call_record(
+                call_id=ctx.job.id or uuid.uuid4().hex[:12],
+                caller_id=caller_id,
+                channel="console" if ctx.is_fake_job() else "browser",
+                history=session.history,
+                started_at=call_started_at,
+                ended_at=_utc_now_iso(),
+                duration_seconds=round(time.monotonic() - call_started_monotonic, 1),
+            )
+            ANALYTICS_STORE.record(record)
+            logger.info(
+                "analytics: recorded call %s — %s (%.0fs, %d user turns)",
+                record["call_id"],
+                record["outcome"],
+                record["duration_seconds"] or 0,
+                record["user_turns"],
+            )
+        except Exception:
+            logger.exception("analytics: failed to record call outcome")
+
+    ctx.add_shutdown_callback(_record_call)
 
     await session.start(agent=agent, room=ctx.room)
 

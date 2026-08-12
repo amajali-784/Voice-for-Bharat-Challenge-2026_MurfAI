@@ -28,6 +28,7 @@ import logging
 import os
 import re
 import sys
+import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -61,6 +62,8 @@ from livekit.plugins import deepgram, google, murf, silero
 from livekit.plugins.turn_detector.multilingual import MultilingualModel
 
 from agent import Assistant
+from analytics import DEFAULT_DB_PATH as ANALYTICS_DB_PATH
+from analytics import CallRecordStore, build_call_record, privacy_id
 from memory import DEFAULT_DB_PATH, CallerStore
 from telephony.outbound.outcome import (
     build_outcome,
@@ -78,6 +81,20 @@ load_dotenv(
 
 # One shared store, same as the inbound worker.
 MEMORY_STORE = CallerStore(DEFAULT_DB_PATH)
+
+# Day 8: anonymised call analytics for the dashboard.
+ANALYTICS_STORE = CallRecordStore(ANALYTICS_DB_PATH)
+
+# Map the Day 6 dial outcomes to analytics failure types.
+SIP_FAILURE_MAP = {
+    "no_answer": "sip_no_answer",
+    "busy": "sip_busy",
+    "declined": "sip_declined",
+    "trunk_failure": "sip_trunk_failure",
+    "opted_out": "sip_opted_out",
+    "voicemail": "sip_voicemail",
+    "unknown": "sip_unknown",
+}
 
 # Required — the LiveKit outbound trunk that routes to sip.linphone.org.
 # Create it in the LiveKit Cloud console (Telephony -> SIP Trunks) or with the
@@ -150,6 +167,11 @@ GUARDRAILS (सख्त नियम — कभी न तोड़ें)
 - कभी यह दावा न करें कि आप डॉक्टर/नर्स हैं।
 - गंभीर लक्षणों पर पहले 108/अस्पताल — बातचीत जारी न रखें।
 - कॉल बंद करने का अनुरोध हमेशा मानें — तुरंत और बिना सवाल किए।
+
+LANGUAGE & SCRIPT (हर भाषा अपनी लिपि में)
+- हर भाषा को हमेशा उसकी अपनी मूल लिपि में लिखें।
+- हिंदी → देवनागरी (नमस्ते), कभी रोमन में नहीं (कभी "namaste" न लिखें)।
+- यही नियम हर गैर-अंग्रेज़ी भाषा पर लागू होता है। अंग्रेज़ी हमेशा लैटिन लिपि में।
 
 STYLE
 - छोटे, स्पष्ट वाक्य — यह एक फोन कॉल है। एक बार में एक ही बात पूछें।
@@ -228,6 +250,10 @@ class HealthReminderAgent(Assistant):
 
     def __init__(self, *, instructions: str | None = None, **kwargs) -> None:
         super().__init__(instructions=instructions or OUTBOUND_SYSTEM_PROMPT, **kwargs)
+        self._analytics_flags: dict[str, bool] = {
+            "opted_out": False,
+            "voicemail": False,
+        }
 
     async def _hangup(self) -> None:
         """Delete the room, which drops the SIP leg and ends the phone call."""
@@ -252,6 +278,7 @@ class HealthReminderAgent(Assistant):
         caller_id = self._caller_id(ctx)
         profile = store.get(caller_id) or {"caller_id": caller_id}
         mark_opted_out(profile, store)
+        self._analytics_flags["opted_out"] = True
         logger.info("caller %s opted out of reminder calls", caller_id)
 
         await ctx.session.generate_reply(
@@ -290,6 +317,7 @@ class HealthReminderAgent(Assistant):
         a live person.
         """
         logger.info("voicemail detected — hanging up")
+        self._analytics_flags["voicemail"] = True
         await self._hangup()
         return "Voicemail detected; call ended."
 
@@ -297,6 +325,43 @@ class HealthReminderAgent(Assistant):
 def prewarm(proc: JobProcess) -> None:
     """Pre-load the Silero VAD model so the first call isn't slow."""
     proc.userdata["vad"] = silero.VAD.load()
+
+
+def _utc_now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def record_dial_failure(
+    *,
+    phone_number: str,
+    room_name: str,
+    outcome: str,
+    detail: str,
+    attempt: int,
+) -> None:
+    """Day 8: record a call that never connected into the analytics store.
+
+    Dial failures happen before any agent session exists, so they can't be
+    captured by the session's shutdown callback — record them explicitly here
+    (anonymised; the phone number is stored as a hash only).
+    """
+    try:
+        ANALYTICS_STORE.record(
+            {
+                "call_id": f"out-{room_name}-{attempt}",
+                "caller_id": privacy_id(phone_number),
+                "channel": "sip",
+                "outcome": "failed",
+                "failure_type": SIP_FAILURE_MAP.get(outcome, "sip_unknown"),
+                "reason": f"outbound call never connected ({outcome})",
+                "started_at": _utc_now_iso(),
+                "ended_at": _utc_now_iso(),
+                "duration_seconds": 0,
+                "detail": (detail or "")[:200],
+            }
+        )
+    except Exception:
+        logger.exception("analytics: failed to record dial failure")
 
 
 async def entrypoint(ctx: JobContext):
@@ -331,6 +396,13 @@ async def entrypoint(ctx: JobContext):
                 detail="skipped before dialing — prior opt-out on record",
                 attempt=attempt,
             )
+        )
+        record_dial_failure(
+            phone_number=phone_number,
+            room_name=room_name,
+            outcome="opted_out",
+            detail="skipped before dialing — prior opt-out on record",
+            attempt=attempt,
         )
         ctx.shutdown()
         return
@@ -428,6 +500,13 @@ async def entrypoint(ctx: JobContext):
             attempt=attempt,
         )
         log_outcome(entry)
+        record_dial_failure(
+            phone_number=phone_number,
+            room_name=room_name,
+            outcome=outcome,
+            detail=detail,
+            attempt=attempt,
+        )
         retry, reason = should_retry(outcome, attempt)
         logger.info(
             "call to %s failed: %s (%s) — retry=%s (%s)",
@@ -444,6 +523,59 @@ async def entrypoint(ctx: JobContext):
 
     await session_started
     logger.info("call answered: %s", phone_number)
+
+    call_started_monotonic = time.monotonic()
+    call_started_at = _utc_now_iso()
+
+    async def _record_call(_reason: str) -> None:
+        """Day 8: record the outbound conversation's outcome on shutdown.
+        The phone number is stored only as a hash."""
+        try:
+            record = build_call_record(
+                call_id=ctx.job.id or f"out-{room_name}",
+                caller_id=phone_number,
+                channel="sip",
+                history=session.history,
+                started_at=call_started_at,
+                ended_at=_utc_now_iso(),
+                duration_seconds=round(time.monotonic() - call_started_monotonic, 1),
+            )
+            flags = agent._analytics_flags
+            if flags.get("voicemail"):
+                record.update(
+                    outcome="failed",
+                    failure_type="sip_voicemail",
+                    reason="call reached voicemail",
+                )
+            elif flags.get("opted_out"):
+                record.update(
+                    outcome="failed",
+                    failure_type="sip_opted_out",
+                    reason="callee asked to stop reminder calls",
+                )
+            elif (
+                record["outcome"] != "success"
+                and "end_call" in record["tools_used"]
+                and (record["user_turns"] >= 1 or record["agent_turns"] >= 1)
+            ):
+                # The agent deliberately ended a completed reminder call that
+                # was too short to meet the generic consultation threshold.
+                record.update(
+                    outcome="success",
+                    failure_type=None,
+                    reason="reminder conversation completed",
+                )
+            ANALYTICS_STORE.record(record)
+            logger.info(
+                "analytics: recorded outbound call %s — %s (%.0fs)",
+                record["call_id"],
+                record["outcome"],
+                record["duration_seconds"] or 0,
+            )
+        except Exception:
+            logger.exception("analytics: failed to record outbound call")
+
+    ctx.add_shutdown_callback(_record_call)
 
     # The opening is spoken deterministically (not via the LLM) so the mandatory
     # who/why/opt-out disclosure can never be skipped.

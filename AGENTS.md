@@ -13,6 +13,8 @@ voice-for-bharat-challenge-2026/
 │   ├── src/memory_api.py # Admin HTTP API — GET/DELETE callers on :8700 (Day 4)
 │   ├── src/escalation.py # Human-help EscalationStore + sanitizer + reference IDs (Day 7)
 │   ├── src/escalation_api.py # Admin HTTP API — GET/PATCH escalations on :8701 (Day 7)
+│   ├── src/analytics.py # Anonymised CallRecordStore — call outcomes for the dashboard (Day 8)
+│   ├── src/analytics_api.py # Admin HTTP API — GET /analytics aggregates on :8702 (Day 8)
 │   └── tests/        # LLM-judged eval tests + memory/facility/tool unit tests
 ├── frontend/         # Next.js UI (LiveKit Agents UI components)
 │   ├── app/          # Pages and API routes (incl. /admin, /escalations and /api/token)
@@ -71,6 +73,31 @@ This is the single entrypoint. It contains:
   status buttons), reachable from the header link. Base URL `NEXT_PUBLIC_ESCALATION_API_URL`
   (default `http://localhost:8701`).
 
+### Call analytics (Day 8)
+- `backend/src/analytics.py` — `CallRecordStore` (SQLite, WAL) records every call's outcome
+  into `call_analytics.db` (repo root, gitignored). `build_call_record()` extracts anonymised
+  signals from `session.history()` (turn counts, tool names, latency — never message text),
+  and `classify_call()` decides success/failure using the Health Access definition: a call is
+  **successful** when a human-help escalation was filed, facility guidance was delivered, the
+  caller's health situation was captured with a real exchange, or a 30s+ two-way consultation
+  happened. Everything else is **failed**, grouped by `failure_type` (`no_response`,
+  `user_hangup`, `incomplete`, `tool_error`, `sip_*`).
+- Privacy: caller identifiers are stored as an opaque SHA-256 hash (`privacy_id()`); no
+  transcripts, names, phones, OTPs or medical details are ever written. That anonymised data
+  is exactly what the public dashboard may show.
+- `backend/src/analytics_api.py` — stdlib admin HTTP API. Default `127.0.0.1:8702`, override
+  with `ANALYTICS_API_HOST` / `ANALYTICS_API_PORT`. Endpoints: `GET /analytics` (summary +
+  daily + latency trend + recent calls), `GET /analytics/calls`, `GET /analytics/summary`,
+  `GET /analytics/daily`.
+- Recording hook: the inbound `entrypoint` in `agent.py` registers a shutdown callback that
+  records the call when the job ends; the outbound SIP worker (`telephony/outbound/agent.py`)
+  records dial failures separately (they never connect) and records connected calls from its
+  own shutdown callback, marking voicemail / opt-out / completed-reminder outcomes.
+- Frontend dashboard: `frontend/app/analytics/page.tsx` — total / successful / failed stat
+  cards, success rate, today, per-channel breakdown, failure reasons, a CSS-only daily trend
+  chart and a recent-calls table, with a live auto-refresh toggle. Base URL
+  `NEXT_PUBLIC_ANALYTICS_API_URL` (default `http://localhost:8702`).
+
 ### Caller memory (Day 4)
 - `backend/src/memory.py` — `CallerStore` (SQLite, WAL). `upsert` does a partial merge: `None` fields are left untouched, list fields (conditions/medications/allergies/notes) are deduped and appended.
 - `backend/src/memory_api.py` — stdlib HTTP admin API. Default `127.0.0.1:8700`, override with `MEMORY_API_HOST` / `MEMORY_API_PORT`.
@@ -86,6 +113,7 @@ uv run python src/agent.py dev              # development
 uv run python src/agent.py console          # terminal-only testing
 uv run python src/memory_api.py             # admin API (optional, for /admin page)
 uv run python src/escalation_api.py         # escalation API (optional, for /escalations page)
+uv run python src/analytics_api.py          # analytics API (optional, for /analytics page)
 ```
 
 ### Environment variables
@@ -97,6 +125,7 @@ Copy `backend/.env.example` to `backend/.env.local`. Required keys:
 
 Optional (memory admin API): `MEMORY_API_HOST` (default `127.0.0.1`), `MEMORY_API_PORT` (default `8700`).
 Optional (escalation admin API): `ESCALATION_API_HOST` (default `127.0.0.1`), `ESCALATION_API_PORT` (default `8701`).
+Optional (analytics admin API): `ANALYTICS_API_HOST` (default `127.0.0.1`), `ANALYTICS_API_PORT` (default `8702`).
 
 ### Code style
 Uses **ruff** for linting and formatting:
@@ -107,7 +136,7 @@ uv run ruff format .
 Config is in `pyproject.toml` — 88 char line length, double quotes, space indent.
 
 ### Testing
-Tests are in `backend/tests/test_agent.py` (LLM-as-judge evals), `backend/tests/test_memory.py` (CallerStore), `backend/tests/test_tools.py` (tool methods with a fake RunContext), `backend/tests/test_facilities.py` (lookup logic; network is monkeypatched so tests never hit Overpass/Nominatim), and `backend/tests/test_escalation.py` (Day 7 human-help store + sanitizer + tool + agent evals). They use LiveKit's testing framework with LLM-as-judge evaluation (not mocks). Run with:
+Tests are in `backend/tests/test_agent.py` (LLM-as-judge evals), `backend/tests/test_memory.py` (CallerStore), `backend/tests/test_tools.py` (tool methods with a fake RunContext), `backend/tests/test_facilities.py` (lookup logic; network is monkeypatched so tests never hit Overpass/Nominatim), `backend/tests/test_escalation.py` (Day 7 human-help store + sanitizer + tool + agent evals), and `backend/tests/test_analytics.py` (Day 8 call classification, privacy and store tests — network-free, plus one agent-level eval). They use LiveKit's testing framework with LLM-as-judge evaluation (not mocks). Run with:
 ```bash
 uv run pytest
 ```
@@ -132,6 +161,7 @@ Managed via `uv` and defined in `pyproject.toml`. Always use `uv sync` and `uv r
 - `frontend/app/api/token/route.ts` — LiveKit token endpoint (also mints the persistent `caller_id` cookie used as agent identity)
 - `frontend/app/admin/page.tsx` — admin page listing remembered callers with Forget buttons (Day 4)
 - `frontend/app/escalations/page.tsx` — human-help dashboard listing open requests with status buttons (Day 7)
+- `frontend/app/analytics/page.tsx` — call analytics dashboard (Day 8)
 - `frontend/components/app/` — app-level logic (welcome view, view controller, theme)
 - `frontend/components/agents-ui/` — voice UI components (visualizers, controls, chat)
 
@@ -147,6 +177,8 @@ Copy `frontend/.env.example` to `frontend/.env.local`. Required:
 - `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`
 - `AGENT_NAME` (optional — set to `my-agent` for explicit dispatch)
 - `NEXT_PUBLIC_MEMORY_API_URL` (optional — admin API base URL, default `http://localhost:8700`)
+- `NEXT_PUBLIC_ESCALATION_API_URL` (optional — admin API base URL, default `http://localhost:8701`)
+- `NEXT_PUBLIC_ANALYTICS_API_URL` (optional — admin API base URL, default `http://localhost:8702`)
 
 ### Linting
 ```bash
