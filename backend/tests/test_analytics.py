@@ -339,6 +339,7 @@ def test_record_then_get(store: CallRecordStore) -> None:
     assert stored["caller_id"] == privacy_id("caller-1")
     assert store.count() == 1
 
+
 def test_record_is_idempotent(store: CallRecordStore) -> None:
     store.record(_record())
     store.record(_record(duration_seconds=999))

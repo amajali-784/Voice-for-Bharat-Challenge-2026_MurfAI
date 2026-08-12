@@ -1,6 +1,6 @@
 # स्वास्थ्य सहायक (Swasthya Sahayak) — Voice Agent Starter, Powered by Murf Falcon
 
-Built for **10 Days of AI Voice Agents — #VoiceForBharat Edition**, Day 6.
+Built for **10 Days of AI Voice Agents — #VoiceForBharat Edition**, Day 8.
 
 **Track:** Health Access
 
@@ -103,6 +103,10 @@ Create `.env.local` in both `backend/` and `frontend/` (copy from `.env.example`
 | `GOOGLE_API_KEY` (or `OPENAI_API_KEY`) | Google AI Studio (Gemini is the default LLM here)         | Yes      |
 | `MEMORY_API_PORT` / `MEMORY_API_HOST`  | Optional — admin API port/host (default `8700`, `127.0.0.1`) | No |
 | `NEXT_PUBLIC_MEMORY_API_URL`           | Frontend only — admin API base URL (default `http://localhost:8700`) | No |
+| `ESCALATION_API_PORT` / `ESCALATION_API_HOST` | Optional — human-help API port/host (default `8701`, `127.0.0.1`) | No |
+| `NEXT_PUBLIC_ESCALATION_API_URL`       | Frontend only — human-help API base URL (default `http://localhost:8701`) | No |
+| `ANALYTICS_API_PORT` / `ANALYTICS_API_HOST` | Optional — analytics API port/host (default `8702`, `127.0.0.1`) | No |
+| `NEXT_PUBLIC_ANALYTICS_API_URL`        | Frontend only — analytics API base URL (default `http://localhost:8702`) | No |
 | `LIVEKIT_SIP_OUTBOUND_TRUNK_ID`        | LiveKit Cloud → SIP Trunks (Linphone: `sip.linphone.org`, TLS) — Day 6 | Only for outbound |
 | `LINPHONE_DOMAIN`                      | SIP server for bare-username dialing (default `sip.linphone.org`, Day 6) | Only for outbound |
 
@@ -147,6 +151,12 @@ cd backend && uv run python src/agent.py dev
 
 # Terminal 3 — Memory admin API (optional, powers the /admin page)
 cd backend && uv run python src/memory_api.py
+
+# Terminal 3b — Escalation admin API (optional, powers the /escalations page)
+cd backend && uv run python src/escalation_api.py
+
+# Terminal 3c — Analytics admin API (optional, powers the /analytics page)
+cd backend && uv run python src/analytics_api.py
 
 # Terminal 4 — Frontend
 cd frontend && pnpm dev
@@ -245,6 +255,51 @@ Try: *"मेरे सीने में दर्द है और साँ�
 hospital / call 108, asks permission, files the request, reads back the reference
 ID. Say *"नहीं"* and nothing is filed. Ask *"मुझे कौन-सी बीमारी है?"* for the
 diagnosis-request path. A routine *"हल्का बुखार है"* call never escalates.
+
+---
+
+## Day 8 — Call analytics dashboard
+
+Every call's outcome is recorded into an anonymised SQLite store and shown on a
+live dashboard at **`/analytics`** — total / successful / failed calls, success
+rate, per-channel breakdown, failure reasons, a daily trend chart, and recent
+calls. The numbers come from **real calls**, never hardcoded.
+
+**Success definition (Health Access):** a call is successful when the caller
+received safe guidance or an appropriate escalation — i.e. a human-help request
+was filed (`create_escalation` returned `created: true`), facility guidance was
+delivered (`find_nearby_health_facilities` returned `status: "ok"`), the
+caller's health situation was captured with a real exchange (`save_caller_info`
++ turns), or a completed 30s+ two-way consultation happened. Everything else is
+**failed**, grouped by failure type (`no_response`, `user_hangup`,
+`incomplete`, `tool_error`, `sip_*`).
+
+- **`backend/src/analytics.py`** — `CallRecordStore` (SQLite, WAL). `classify_call()`
+  applies the success definition, `extract_call_signals()` reads only counts /
+  tool names / latency from a session history, `privacy_id()` hashes caller
+  identifiers (SHA-256), and `summary()` / `daily()` / `latency_trend()` /
+  `recent()` feed the dashboard. **No transcripts, names, phones, OTPs or
+  medical details are ever stored.**
+- **Recording hooks** — the inbound `entrypoint` in `agent.py` records every
+  browser call via a shutdown callback; the outbound SIP worker
+  (`telephony/outbound/agent.py`) records dial failures separately and marks
+  voicemail / opt-out / completed-reminder outcomes.
+- **`backend/src/analytics_api.py`** — stdlib admin API on **`127.0.0.1:8702`**
+  (`GET /analytics`, `/analytics/calls`, `/analytics/summary`,
+  `/analytics/daily`, `/healthz`) powering the dashboard.
+- **Dashboard** — `frontend/app/analytics/page.tsx` with a live auto-refresh
+  toggle (5 s), reachable from the header.
+
+```bash
+cd backend
+uv run python src/agent.py dev        # Terminal 1 — agent
+uv run python src/analytics_api.py     # Terminal 2 — dashboard API
+cd ../frontend && pnpm dev             # Terminal 3 — UI (open /analytics)
+```
+
+Talk to the agent (e.g. *"मेरा नाम सुनीता है, दिल्ली से हूँ, हल्का बुखार और खाँसी है"*),
+then open **http://localhost:3000/analytics** and watch the total / successful
+counters go up. Full walkthrough + video script in [`Day8.md`](./Day8.md).
 
 ---
 
@@ -376,6 +431,10 @@ voice-for-bharat-challenge-2026/
 │   │   ├── memory.py        # SQLite CallerStore — persistent caller memory
 │   │   ├── facilities.py    # Day 5 — live OSM + offline health-facility lookup
 │   │   ├── memory_api.py    # Admin API (GET/DELETE callers) on :8700
+│   │   ├── escalation.py    # Day 7 — EscalationStore: human-help request queue
+│   │   ├── escalation_api.py# Day 7 — Admin API on :8701 (lists/updates requests)
+│   │   ├── analytics.py     # Day 8 — CallRecordStore: anonymised call outcomes
+│   │   ├── analytics_api.py # Day 8 — Admin API on :8702 (powers /analytics)
 │   │   └── telephony/
 │   │       └── outbound/    # Day 6 — agent.py (outbound worker), dial.py, outcome.py
 │   ├── tests/               # Pytest: memory store, tools, and agent evals
@@ -386,6 +445,8 @@ voice-for-bharat-challenge-2026/
 │   ├── app/
 │   │   ├── page.tsx
 │   │   ├── admin/page.tsx   # Day 4 — list/forget remembered callers
+│   │   ├── escalations/page.tsx # Day 7 — human-help dashboard
+│   │   ├── analytics/page.tsx   # Day 8 — call analytics dashboard
 │   │   └── api/token/       # Mint persistent caller_id cookie (identity)
 │   ├── components/
 │   ├── app-config.ts        # Branding/title updated for Health Access
