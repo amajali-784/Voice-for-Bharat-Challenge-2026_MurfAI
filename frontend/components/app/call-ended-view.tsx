@@ -2,7 +2,6 @@
 
 import { ArrowLeft, HeartHandshake, RotateCcw } from 'lucide-react';
 import { motion } from 'motion/react';
-import { AuroraGlow, BotanicalLeaves, TwinklingStars } from '@/components/app/garden-decor';
 import { HealingCircle } from '@/components/app/healing-circle';
 import { Button } from '@/components/ui/button';
 
@@ -37,12 +36,10 @@ export const CallEndedView = ({
   ref,
 }: React.ComponentProps<'div'> & CallEndedViewProps) => {
   return (
-    <div ref={ref} className="bg-background relative flex min-h-svh flex-col overflow-hidden">
-      <div className="botanical-bg pointer-events-none absolute inset-0" aria-hidden />
-      <BotanicalLeaves />
-      <AuroraGlow />
-      <TwinklingStars count={10} />
-
+    <div
+      ref={ref}
+      className="relative flex min-h-svh flex-col overflow-hidden pt-[84px] md:pt-[92px]"
+    >
       <motion.div
         variants={containerVariants}
         initial="hidden"

@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Loader2, Mic } from 'lucide-react';
 import { AnimatePresence, type MotionProps, motion } from 'motion/react';
 import {
   type AgentState,
   useAgent,
+  useChat,
   useSessionContext,
   useSessionMessages,
 } from '@livekit/components-react';
@@ -16,31 +17,13 @@ import {
   type AgentControlBarControls,
 } from '@/components/agents-ui/agent-control-bar';
 import { Shimmer } from '@/components/ai-elements/shimmer';
+import { type DoctorTone } from '@/components/app/doctor-avatar';
+import { useLanguage } from '@/components/app/language-provider';
+import { QuickLaunchCards, type QuickLaunchId } from '@/components/app/quick-launch-cards';
 import { cn } from '@/lib/shadcn/utils';
 import { TileLayout } from './tile-view';
 
 const MotionMessage = motion.create(Shimmer);
-
-const BOTTOM_VIEW_MOTION_PROPS: MotionProps = {
-  variants: {
-    visible: {
-      opacity: 1,
-      translateY: '0%',
-    },
-    hidden: {
-      opacity: 0,
-      translateY: '100%',
-    },
-  },
-  initial: 'hidden',
-  animate: 'visible',
-  exit: 'hidden',
-  transition: {
-    duration: 0.3,
-    delay: 0.5,
-    ease: 'easeOut',
-  },
-};
 
 const CHAT_MOTION_PROPS: MotionProps = {
   variants: {
@@ -166,6 +149,7 @@ function ThinkingIcon() {
 }
 
 function AgentStatusBanner({ state, labels }: AgentStatusBannerProps) {
+  const { language } = useLanguage();
   const info = useMemo(() => {
     switch (state) {
       case 'connecting':
@@ -183,7 +167,7 @@ function AgentStatusBanner({ state, labels }: AgentStatusBannerProps) {
           icon: <ListeningIcon />,
           className:
             'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
-          en: labels?.listening.en ?? 'Listening to you',
+          en: labels?.listening.en ?? 'Listening',
           hi: labels?.listening.hi ?? 'आप बोलें — मैं सुन रहा हूँ',
         };
       case 'thinking':
@@ -191,15 +175,15 @@ function AgentStatusBanner({ state, labels }: AgentStatusBannerProps) {
           icon: <ThinkingIcon />,
           className:
             'border-gold/35 bg-gold/10 text-terracotta dark:border-gold/30 dark:bg-gold/10 dark:text-amber-200',
-          en: labels?.thinking.en ?? 'Thinking…',
-          hi: labels?.thinking.hi ?? 'सोच रहा हूँ',
+          en: labels?.thinking.en ?? 'Processing…',
+          hi: labels?.thinking.hi ?? 'प्रोसेस हो रहा है',
         };
       case 'speaking':
         return {
           icon: <SpeakingIcon />,
           className:
             'border-peach/50 bg-peach/15 text-terracotta dark:border-peach/30 dark:bg-peach/10 dark:text-peach',
-          en: labels?.speaking.en ?? 'Agent is speaking',
+          en: labels?.speaking.en ?? 'Speaking',
           hi: labels?.speaking.hi ?? 'एजेंट बोल रहा है',
         };
       default:
@@ -211,28 +195,71 @@ function AgentStatusBanner({ state, labels }: AgentStatusBannerProps) {
     return null;
   }
 
+  const primary = language === 'hi' ? info.hi : info.en;
+  const secondary = language === 'hi' ? info.en : info.hi;
+
   return (
-    <div className="absolute top-4 left-1/2 z-40 -translate-x-1/2 md:top-6">
+    <div className="absolute top-2 left-1/2 z-40 -translate-x-1/2 md:top-4">
       <motion.div
-        key={state}
+        key={`${state}-${language}`}
         initial={{ opacity: 0, translateY: -10, scale: 0.95 }}
         animate={{ opacity: 1, translateY: 0, scale: 1 }}
         exit={{ opacity: 0, translateY: -10, scale: 0.95 }}
         transition={{ duration: 0.25, ease: 'easeOut' }}
         className={cn(
-          'flex items-center gap-2.5 rounded-full border px-4 py-2 shadow-sm backdrop-blur',
+          'glass-panel flex flex-col items-center gap-0.5 rounded-2xl border px-5 py-2.5',
           info.className
         )}
       >
-        <span className="flex items-center">{info.icon}</span>
-        <span className="text-sm leading-tight font-semibold">{info.en}</span>
+        <span className="flex items-center gap-2.5">
+          <span className="flex items-center">{info.icon}</span>
+          <span className="text-sm leading-tight font-extrabold tracking-[0.18em] uppercase md:text-base">
+            {primary}
+          </span>
+        </span>
         <span
           className="text-xs leading-tight font-medium opacity-70"
           style={{ fontFamily: 'var(--font-mukta)' }}
         >
-          {info.hi}
+          {secondary}
         </span>
       </motion.div>
+    </div>
+  );
+}
+
+interface TranscriptPanelProps {
+  agentState: AgentState;
+  messages: React.ComponentProps<typeof AgentChatTranscript>['messages'];
+  className?: string;
+}
+
+function TranscriptPanel({ agentState, messages, className }: TranscriptPanelProps) {
+  return (
+    <div
+      className={cn(
+        'glass-panel flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl',
+        className
+      )}
+    >
+      <div className="border-foreground/10 flex items-center justify-between border-b px-4 py-3">
+        <span className="flex items-center gap-2 font-mono text-[10px] font-bold tracking-widest uppercase">
+          <motion.span
+            animate={{ opacity: [1, 0.3, 1] }}
+            transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+            className="size-1.5 rounded-full bg-teal-400 shadow-[0_0_8px_rgba(45,212,191,0.9)]"
+          />
+          Live Transcript
+        </span>
+        <span className="text-muted-foreground font-mono text-[10px] font-bold tracking-widest uppercase">
+          EN · HI
+        </span>
+      </div>
+      <AgentChatTranscript
+        agentState={agentState}
+        messages={messages}
+        className="min-h-0 flex-1 [&_.is-user>div]:rounded-[22px]"
+      />
     </div>
   );
 }
@@ -317,8 +344,26 @@ export function AgentSessionView_01({
   const session = useSessionContext();
   const { messages } = useSessionMessages(session);
   const [chatOpen, setChatOpen] = useState(false);
+  const [tone, setTone] = useState<DoctorTone | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { state: agentState } = useAgent();
+  const { send } = useChat();
+
+  // Expression tone — caller can steer it manually; otherwise derived from state.
+  const toneValue: DoctorTone = tone ?? (agentState === 'thinking' ? 'curious' : 'reassuring');
+
+  // Context-aware quick actions — fire the matching tool-path by sending a
+  // chat message to the agent, mirroring the spoken intent.
+  const handleQuickLaunch = useCallback(
+    (id: QuickLaunchId) => {
+      void send(
+        id === 'clinic'
+          ? 'Can you help me find a nearby clinic?'
+          : 'Can you check my symptom history?'
+      );
+    },
+    [send]
+  );
 
   const controls: AgentControlBarControls = {
     leave: true,
@@ -338,78 +383,93 @@ export function AgentSessionView_01({
   }, [messages]);
 
   return (
-    <section
-      ref={ref}
-      className={cn('bg-background relative z-10 h-full w-full overflow-hidden', className)}
-      {...props}
-    >
+    <section ref={ref} className={cn('relative z-10 w-full overflow-hidden', className)} {...props}>
       <Fade top className="absolute inset-x-4 top-0 z-10 h-40" />
       {/* Live status banner (connecting / listening / speaking) */}
       <AgentStatusBanner state={agentState} labels={statusLabels} />
-      {/* transcript */}
 
-      <div className="absolute top-0 bottom-[135px] flex w-full flex-col md:bottom-[170px]">
-        <AnimatePresence>
-          {chatOpen && (
-            <motion.div
-              {...CHAT_MOTION_PROPS}
-              className="flex h-full w-full flex-col gap-4 space-y-3 transition-opacity duration-300 ease-out"
-            >
-              <AgentChatTranscript
-                agentState={agentState}
-                messages={messages}
-                className="mx-auto w-full max-w-2xl [&_.is-user>div]:rounded-[22px] [&>div>div]:px-4 [&>div>div]:pt-40 md:[&>div>div]:px-6"
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-      {/* Tile layout */}
-      <TileLayout
-        chatOpen={chatOpen}
-        audioVisualizerType={audioVisualizerType}
-        audioVisualizerColor={audioVisualizerColor}
-        audioVisualizerColorShift={audioVisualizerColorShift}
-        audioVisualizerBarCount={audioVisualizerBarCount}
-        audioVisualizerRadialBarCount={audioVisualizerRadialBarCount}
-        audioVisualizerRadialRadius={audioVisualizerRadialRadius}
-        audioVisualizerGridRowCount={audioVisualizerGridRowCount}
-        audioVisualizerGridColumnCount={audioVisualizerGridColumnCount}
-        audioVisualizerWaveLineWidth={audioVisualizerWaveLineWidth}
-      />
-      {/* Bottom */}
-      <motion.div
-        {...BOTTOM_VIEW_MOTION_PROPS}
-        className="absolute inset-x-3 bottom-0 z-50 md:inset-x-12"
-      >
-        {/* Pre-connect message */}
-        {isPreConnectBufferEnabled && (
+      {/* Dashboard row — stage + persistent transcript column (lg+) */}
+      <div className="absolute inset-0 z-20 flex">
+        {/* Main stage — natural flow so the robot, quick actions and dock never overlap */}
+        <div className="relative flex h-full min-w-0 flex-1 flex-col">
+          {/* Robot stage */}
+          <div className="flex min-h-0 w-full flex-1 items-center justify-center">
+            <TileLayout
+              chatOpen={false}
+              tone={toneValue}
+              onToneChange={setTone}
+              audioVisualizerType={audioVisualizerType}
+              audioVisualizerColor={audioVisualizerColor}
+              audioVisualizerColorShift={audioVisualizerColorShift}
+              audioVisualizerBarCount={audioVisualizerBarCount}
+              audioVisualizerRadialBarCount={audioVisualizerRadialBarCount}
+              audioVisualizerRadialRadius={audioVisualizerRadialRadius}
+              audioVisualizerGridRowCount={audioVisualizerGridRowCount}
+              audioVisualizerGridColumnCount={audioVisualizerGridColumnCount}
+              audioVisualizerWaveLineWidth={audioVisualizerWaveLineWidth}
+            />
+          </div>
+
+          {/* Context-aware quick actions */}
           <AnimatePresence>
-            {messages.length === 0 && (
-              <MotionMessage
-                key="pre-connect-message"
-                duration={2}
-                aria-hidden={messages.length > 0}
-                {...SHIMMER_MOTION_PROPS}
-                className="pointer-events-none mx-auto block w-full max-w-2xl pb-4 text-center text-sm font-semibold"
+            {!chatOpen && (
+              <motion.div
+                key="quick-actions"
+                initial={{ opacity: 0, translateY: 16 }}
+                animate={{ opacity: 1, translateY: 0 }}
+                exit={{ opacity: 0, translateY: 16 }}
+                transition={{ duration: 0.4, ease: 'easeOut', delay: 0.5 }}
+                className="flex justify-center px-4 pt-1 pb-2"
               >
-                {preConnectMessage}
-              </MotionMessage>
+                <QuickLaunchCards compact onSelect={handleQuickLaunch} />
+              </motion.div>
             )}
           </AnimatePresence>
-        )}
-        <div className="bg-background relative mx-auto max-w-2xl pb-3 md:pb-12">
-          <Fade bottom className="absolute inset-x-0 top-0 h-4 -translate-y-full" />
-          <AgentControlBar
-            variant="livekit"
-            controls={controls}
-            isChatOpen={chatOpen}
-            isConnected={session.isConnected}
-            onDisconnect={session.end}
-            onIsChatOpenChange={setChatOpen}
-          />
+
+          {/* Bottom dock — always visible, no slide animation */}
+          <div className="relative shrink-0 px-3 pb-3 md:px-8 md:pb-6">
+            {/* Pre-connect message */}
+            {isPreConnectBufferEnabled && (
+              <AnimatePresence>
+                {messages.length === 0 && (
+                  <MotionMessage
+                    key="pre-connect-message"
+                    duration={2}
+                    aria-hidden={messages.length > 0}
+                    {...SHIMMER_MOTION_PROPS}
+                    className="pointer-events-none mx-auto block w-full max-w-2xl pb-4 text-center text-sm font-semibold"
+                  >
+                    {preConnectMessage}
+                  </MotionMessage>
+                )}
+              </AnimatePresence>
+            )}
+            <div className="relative mx-auto max-w-2xl">
+              <Fade bottom className="absolute inset-x-0 top-0 h-4 -translate-y-full" />
+              <AgentControlBar
+                variant="livekit"
+                controls={controls}
+                isChatOpen={chatOpen}
+                isConnected={session.isConnected}
+                onDisconnect={session.end}
+                onIsChatOpenChange={setChatOpen}
+              />
+            </div>
+          </div>
         </div>
-      </motion.div>
+      </div>
+
+      {/* Transcript — shown ONLY when the user taps the chat/transcript toggle */}
+      <AnimatePresence>
+        {chatOpen && (
+          <motion.div
+            {...CHAT_MOTION_PROPS}
+            className="absolute inset-x-3 top-20 bottom-[180px] z-[60] flex xl:top-16 xl:right-6 xl:bottom-16 xl:left-auto xl:w-[340px]"
+          >
+            <TranscriptPanel agentState={agentState} messages={messages} />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }

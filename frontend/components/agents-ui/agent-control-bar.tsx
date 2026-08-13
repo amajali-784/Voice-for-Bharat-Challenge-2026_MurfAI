@@ -2,7 +2,7 @@
 
 import { type ComponentProps, useEffect, useRef, useState } from 'react';
 import { Track } from 'livekit-client';
-import { Loader, MessageSquareTextIcon, SendHorizontal } from 'lucide-react';
+import { Loader, MessageSquareTextIcon, Mic, SendHorizontal } from 'lucide-react';
 import { type MotionProps, motion } from 'motion/react';
 import { useChat } from '@livekit/components-react';
 import { AgentDisconnectButton } from '@/components/agents-ui/agent-disconnect-button';
@@ -131,6 +131,42 @@ function AgentChatInput({ chatOpen, onSend = async () => {}, className }: AgentC
         {isSending ? <Loader className="animate-spin" /> : <SendHorizontal />}
       </Button>
     </div>
+  );
+}
+
+interface TapToSpeakButtonProps {
+  enabled: boolean;
+  pending: boolean;
+  onToggle: () => void;
+}
+
+function TapToSpeakButton({ enabled, pending, onToggle }: TapToSpeakButtonProps) {
+  return (
+    <motion.button
+      type="button"
+      disabled={pending}
+      onClick={onToggle}
+      whileTap={{ scale: 0.92 }}
+      aria-label={enabled ? 'Mute microphone' : 'Tap to speak'}
+      title="Tap to speak · बोलिए"
+      className={cn(
+        'relative flex size-16 shrink-0 items-center justify-center rounded-full transition-all duration-300 md:size-[72px]',
+        enabled
+          ? 'bg-gradient-to-b from-teal-300 to-cyan-500 text-[#04201a] shadow-[0_0_36px_rgba(45,212,191,0.6)]'
+          : 'text-muted-foreground hover:text-foreground bg-white/10 ring-1 ring-white/15 hover:bg-white/15'
+      )}
+    >
+      {enabled && (
+        <motion.span
+          aria-hidden
+          className="absolute inset-0 rounded-full ring-2 ring-teal-300/70"
+          animate={{ scale: [1, 1.55], opacity: [0.6, 0] }}
+          transition={{ duration: 1.4, repeat: Infinity, ease: 'easeOut' }}
+        />
+      )}
+      <Mic className="size-6" />
+      <span className="sr-only">{enabled ? 'Mute' : 'Tap to speak'}</span>
+    </motion.button>
   );
 }
 
@@ -288,7 +324,7 @@ export function AgentControlBar({
     <div
       aria-label="Voice assistant controls"
       className={cn(
-        'bg-background border-input/50 dark:border-muted flex flex-col border p-3 drop-shadow-md/3',
+        'glass-panel flex flex-col p-3',
         variant === 'livekit' ? 'rounded-[31px]' : 'rounded-lg',
         className
       )}
@@ -307,10 +343,10 @@ export function AgentControlBar({
         />
       </motion.div>
 
-      <div className="flex gap-1">
+      <div className="flex items-center gap-2">
         <div className="flex grow gap-1">
-          {/* Toggle Microphone */}
-          {visibleControls.microphone && (
+          {/* Toggle Microphone (small control — replaced by the big Tap-to-Speak button in livekit variant) */}
+          {variant !== 'livekit' && visibleControls.microphone && (
             <AgentTrackControl
               variant={variant === 'outline' ? 'outline' : 'default'}
               kind="audioinput"
@@ -322,12 +358,10 @@ export function AgentControlBar({
               onPressedChange={microphoneToggle.toggle}
               onActiveDeviceChange={handleAudioDeviceChange}
               onMediaDeviceError={handleMicrophoneDeviceSelectError}
-              className={cn(
-                variant === 'livekit' && [
-                  LK_TOGGLE_VARIANT_1,
-                  'rounded-full [&_button:first-child]:rounded-l-full [&_button:last-child]:rounded-r-full',
-                ]
-              )}
+              className={cn([
+                LK_TOGGLE_VARIANT_1,
+                'rounded-full [&_button:first-child]:rounded-l-full [&_button:last-child]:rounded-r-full',
+              ])}
             />
           )}
 
@@ -386,20 +420,33 @@ export function AgentControlBar({
           )}
         </div>
 
-        {/* Disconnect */}
-        {visibleControls.leave && (
-          <AgentDisconnectButton
-            onClick={onDisconnect}
-            disabled={!isConnected}
-            className={cn(
-              variant === 'livekit' &&
-                'bg-destructive/10 dark:bg-destructive/10 text-destructive hover:bg-destructive/20 dark:hover:bg-destructive/20 focus:bg-destructive/20 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/4 rounded-full font-mono text-xs font-bold tracking-wider'
-            )}
-          >
-            <span className="hidden md:inline">END CALL</span>
-            <span className="inline md:hidden">END</span>
-          </AgentDisconnectButton>
+        {/* Big Tap to Speak — primary mic toggle in the glass dock */}
+        {variant === 'livekit' && visibleControls.microphone && (
+          <div className="flex shrink-0 justify-center">
+            <TapToSpeakButton
+              enabled={microphoneToggle.enabled}
+              pending={microphoneToggle.pending}
+              onToggle={() => void microphoneToggle.toggle()}
+            />
+          </div>
         )}
+
+        {/* Disconnect */}
+        <div className="flex grow justify-end">
+          {visibleControls.leave && (
+            <AgentDisconnectButton
+              onClick={onDisconnect}
+              disabled={!isConnected}
+              className={cn(
+                variant === 'livekit' &&
+                  'bg-destructive/10 dark:bg-destructive/10 text-destructive hover:bg-destructive/20 dark:hover:bg-destructive/20 focus:bg-destructive/20 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/4 rounded-full font-mono text-xs font-bold tracking-wider'
+              )}
+            >
+              <span className="hidden md:inline">END CALL</span>
+              <span className="inline md:hidden">END</span>
+            </AgentDisconnectButton>
+          )}
+        </div>
       </div>
     </div>
   );

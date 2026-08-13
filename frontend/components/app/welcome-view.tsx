@@ -1,15 +1,9 @@
 'use client';
 
-import { Activity, MapPin, MessagesSquare, Mic } from 'lucide-react';
+import { Mic } from 'lucide-react';
 import { motion } from 'motion/react';
-import {
-  AuroraGlow,
-  BotanicalLeaves,
-  FloatingParticles,
-  TwinklingStars,
-} from '@/components/app/garden-decor';
 import { HealingCircle } from '@/components/app/healing-circle';
-import { TiltCard } from '@/components/app/tilt-card';
+import { QuickLaunchCards } from '@/components/app/quick-launch-cards';
 import { Button } from '@/components/ui/button';
 
 const containerVariants = {
@@ -32,24 +26,6 @@ const itemVariants = {
   },
 };
 
-const FEATURES = [
-  {
-    icon: Activity,
-    en: 'Understand Symptoms',
-    hi: 'लक्षण समझें',
-  },
-  {
-    icon: MapPin,
-    en: 'Find Nearby Care',
-    hi: 'नज़दीकी देखभाल खोजें',
-  },
-  {
-    icon: MessagesSquare,
-    en: 'Doctor Guidance',
-    hi: 'डॉक्टर मार्गदर्शन',
-  },
-];
-
 interface WelcomeViewProps {
   startButtonText: string;
   onStartCall: () => void;
@@ -61,57 +37,46 @@ export const WelcomeView = ({
   ref,
 }: React.ComponentProps<'div'> & WelcomeViewProps) => {
   return (
-    <div ref={ref} className="bg-background relative flex min-h-svh flex-col overflow-hidden">
-      {/* Magical garden backdrop */}
-      <div className="botanical-bg pointer-events-none absolute inset-0" aria-hidden />
-      <BotanicalLeaves />
-      <AuroraGlow />
-      <TwinklingStars count={16} />
-      <FloatingParticles count={14} />
-
+    <div
+      ref={ref}
+      className="scroll-if-needed relative flex min-h-svh flex-col pt-[84px] md:pt-[92px]"
+    >
       <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="relative flex grow flex-col items-center justify-center px-4 py-14 text-center"
+        className="relative flex grow flex-col items-center justify-center px-4 py-5 text-center md:py-8"
       >
         <motion.span
           variants={itemVariants}
-          className="border-gold/30 bg-cream/60 dark:bg-forest/40 mb-6 inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 font-mono text-[11px] font-bold tracking-wider uppercase shadow-sm backdrop-blur"
+          className="glass-chip text-foreground/80 mb-3 inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 font-mono text-[11px] font-bold tracking-wider uppercase shadow-sm"
         >
           <motion.span
             animate={{ opacity: [1, 0.3, 1], scale: [1, 1.4, 1] }}
             transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
-            className="bg-gold size-1.5 rounded-full"
+            className="size-1.5 rounded-full bg-teal-400 shadow-[0_0_10px_rgba(45,212,191,0.9)]"
           />
-          ✨ Healing Garden · #VoiceForBharat
+          ✨ Ready · तैयार
         </motion.span>
 
         <motion.div variants={itemVariants}>
-          <HealingCircle state="ready" />
+          <HealingCircle state="ready" size="clamp(150px, 23vh, 240px)" />
         </motion.div>
-
-        <motion.p
-          variants={itemVariants}
-          className="text-muted-foreground mt-3 text-sm font-medium"
-        >
-          🙏 Namaste — I&apos;m Dr. Swasthya, your voice companion.
-        </motion.p>
 
         <motion.h1
           variants={itemVariants}
-          className="mt-4 text-4xl leading-tight font-bold tracking-tight md:text-6xl"
+          className="mt-1 text-3xl leading-tight font-bold tracking-tight md:text-4xl"
           style={{ fontFamily: 'var(--font-mukta)' }}
         >
           <span>Your Health,</span>{' '}
-          <span className="animate-shimmer bg-[linear-gradient(110deg,#234236,#6b8e71,#d9a441,#234236)] bg-[length:220%_auto] bg-clip-text text-transparent">
+          <span className="animate-shimmer text-glow bg-[linear-gradient(110deg,#2dd4bf,#38bdf8,#5eead4,#2dd4bf)] bg-[length:220%_auto] bg-clip-text text-transparent">
             Your Voice.
           </span>
         </motion.h1>
 
         <motion.p
           variants={itemVariants}
-          className="text-muted-foreground mt-2 text-lg font-semibold md:text-xl"
+          className="text-muted-foreground mt-1 text-lg font-semibold md:text-xl"
           style={{ fontFamily: 'var(--font-mukta)' }}
         >
           आपकी सेहत, आपकी आवाज़।
@@ -119,21 +84,21 @@ export const WelcomeView = ({
 
         <motion.p
           variants={itemVariants}
-          className="text-muted-foreground mt-4 max-w-prose leading-7 font-medium"
+          className="short-hidden text-muted-foreground mt-2 max-w-prose leading-6 font-medium"
         >
           Speak naturally to understand symptoms, find nearby care, and get guidance before you
           visit a doctor — comfortably in Hindi or English.
         </motion.p>
 
-        <motion.div variants={itemVariants} className="mt-8">
+        <motion.div variants={itemVariants} className="mt-3">
           <Button
             size="lg"
             onClick={onStartCall}
-            className="group relative w-80 overflow-hidden rounded-full bg-gradient-to-b from-[#3a7353] to-[#234236] px-8 py-7 font-mono text-sm font-bold tracking-wider text-[var(--primary-foreground)] uppercase shadow-[0_18px_40px_-12px_rgba(35,66,54,0.6),inset_0_1px_0_rgba(255,255,255,0.25)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_50px_-12px_rgba(35,66,54,0.7),inset_0_1px_0_rgba(255,255,255,0.25)] active:translate-y-0.5 active:shadow-[0_8px_18px_-8px_rgba(35,66,54,0.6),inset_0_1px_0_rgba(255,255,255,0.25)]"
+            className="group relative w-72 overflow-hidden rounded-full bg-gradient-to-b from-[#2dd4bf] to-[#0891b2] px-8 py-5 font-mono text-sm font-bold tracking-wider text-[#04201a] uppercase shadow-[0_18px_40px_-12px_rgba(45,212,191,0.6),inset_0_1px_0_rgba(255,255,255,0.35)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_50px_-12px_rgba(45,212,191,0.75),inset_0_1px_0_rgba(255,255,255,0.35)] active:translate-y-0.5 active:shadow-[0_8px_18px_-8px_rgba(45,212,191,0.6),inset_0_1px_0_rgba(255,255,255,0.35)]"
           >
             <span
               aria-hidden
-              className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-full"
+              className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-full"
             />
             <motion.span
               animate={{ rotate: [0, 20, 0, -12, 0] }}
@@ -144,34 +109,21 @@ export const WelcomeView = ({
             </motion.span>
             <span className="relative">{startButtonText}</span>
           </Button>
-          <p className="text-muted-foreground mt-4 text-xs">
-            बातचीत शुरू करें · English • हिंदी · A working microphone is needed to talk.
-          </p>
         </motion.div>
 
         <motion.div
           variants={itemVariants}
-          className="mt-9 flex flex-wrap items-stretch justify-center gap-3"
+          className="mt-4 flex w-full flex-col items-center gap-2"
         >
-          {FEATURES.map(({ icon: Icon, en, hi }) => (
-            <TiltCard
-              key={en}
-              className="border-border/80 bg-card/70 dark:bg-forest/30 rounded-2xl shadow-[0_10px_30px_-15px_rgba(35,66,54,0.4)] backdrop-blur"
-            >
-              <div className="flex w-40 flex-col items-center gap-2 px-4 py-4 md:w-44">
-                <span className="from-sage to-forest text-cream dark:from-sage-light dark:to-forest flex size-10 items-center justify-center rounded-full bg-gradient-to-b shadow-md">
-                  <Icon className="size-5" />
-                </span>
-                <span className="text-sm font-bold">{en}</span>
-                <span
-                  className="text-muted-foreground text-[11px]"
-                  style={{ fontFamily: 'var(--font-mukta)' }}
-                >
-                  {hi}
-                </span>
-              </div>
-            </TiltCard>
-          ))}
+          <span className="short-hidden text-muted-foreground font-mono text-[10px] font-bold tracking-widest uppercase">
+            Quick actions · तेज़ कार्रवाई
+          </span>
+          <div className="hidden min-[640px]:block">
+            <QuickLaunchCards onSelect={onStartCall} />
+          </div>
+          <div className="min-[640px]:hidden">
+            <QuickLaunchCards compact onSelect={onStartCall} />
+          </div>
         </motion.div>
       </motion.div>
 
@@ -179,9 +131,9 @@ export const WelcomeView = ({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.9, duration: 0.8 }}
-        className="relative flex w-full items-center justify-center px-4 pb-6"
+        className="relative flex w-full items-center justify-center px-4 pb-3"
       >
-        <p className="text-muted-foreground max-w-prose pt-1 text-center text-xs leading-5 font-normal text-pretty md:text-sm">
+        <p className="short-hidden text-muted-foreground max-w-prose pt-1 text-center text-xs leading-5 font-normal text-pretty md:text-sm">
           <span className="font-semibold">Health companion, not a doctor.</span> For serious
           symptoms, call your nearest hospital or 108 immediately.
           <span className="text-muted-foreground/70 mt-1 block text-[10px]">

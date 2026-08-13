@@ -159,7 +159,7 @@ export function HealingCircle({
           transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut' }}
           className="h-full w-full"
         >
-          {children ?? <DoctorAvatar state={state as DoctorState} />}
+          {children ?? <DoctorAvatar state={state as DoctorState} tone="reassuring" />}
         </motion.div>
       </motion.div>
     </div>

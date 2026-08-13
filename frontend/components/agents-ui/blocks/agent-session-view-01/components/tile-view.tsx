@@ -8,8 +8,8 @@ import {
   useTracks,
   useVoiceAssistant,
 } from '@livekit/components-react';
-import { DoctorAvatar, type DoctorState } from '@/components/app/doctor-avatar';
-import { cn } from '@/lib/shadcn/utils';
+import { DoctorAvatar, type DoctorState, type DoctorTone } from '@/components/app/doctor-avatar';
+import { ExpressionPanel } from '@/components/app/expression-panel';
 import { AudioVisualizer } from './audio-visualizer';
 
 const ANIMATION_TRANSITION: MotionProps['transition'] = {
@@ -17,45 +17,6 @@ const ANIMATION_TRANSITION: MotionProps['transition'] = {
   stiffness: 675,
   damping: 75,
   mass: 1,
-};
-
-const tileViewClassNames = {
-  // GRID
-  // 2 Columns x 3 Rows
-  grid: [
-    'h-full w-full',
-    'grid gap-x-2 place-content-center',
-    'grid-cols-[1fr_1fr] grid-rows-[90px_1fr_90px]',
-  ],
-  // Agent
-  // chatOpen: true,
-  // hasSecondTile: true
-  // layout: Column 1 / Row 1
-  // align: x-end y-center
-  agentChatOpenWithSecondTile: ['col-start-1 row-start-1', 'self-center justify-self-end'],
-  // Agent
-  // chatOpen: true,
-  // hasSecondTile: false
-  // layout: Column 1 / Row 1 / Column-Span 2
-  // align: x-center y-center
-  agentChatOpenWithoutSecondTile: ['col-start-1 row-start-1', 'col-span-2', 'place-content-center'],
-  // Agent
-  // chatOpen: false
-  // layout: Column 1 / Row 1 / Column-Span 2 / Row-Span 3
-  // align: x-center y-center
-  agentChatClosed: ['col-start-1 row-start-1', 'col-span-2 row-span-3', 'place-content-center'],
-  // Second tile
-  // chatOpen: true,
-  // hasSecondTile: true
-  // layout: Column 2 / Row 1
-  // align: x-start y-center
-  secondTileChatOpen: ['col-start-2 row-start-1', 'self-center justify-self-start'],
-  // Second tile
-  // chatOpen: false,
-  // hasSecondTile: false
-  // layout: Column 2 / Row 2
-  // align: x-end y-end
-  secondTileChatClosed: ['col-start-2 row-start-3', 'place-content-end'],
 };
 
 export function useLocalTrackRef(source: Track.Source) {
@@ -70,6 +31,8 @@ export function useLocalTrackRef(source: Track.Source) {
 
 interface TileLayoutProps {
   chatOpen: boolean;
+  tone: DoctorTone;
+  onToneChange?: (tone: DoctorTone) => void;
   audioVisualizerType?: 'bar' | 'wave' | 'grid' | 'radial' | 'aura';
   audioVisualizerColor?: `#${string}`;
   audioVisualizerColorShift?: number;
@@ -81,8 +44,15 @@ interface TileLayoutProps {
   audioVisualizerBarCount?: number;
 }
 
+/**
+ * The voice-call stage. Uses a vmin-sized circular stage (no fixed pixel
+ * sizes) so the doctor + ring stay centred and never overflow the screen; the
+ * visualizer is clipped inside the circle instead of being clipped by it.
+ */
 export function TileLayout({
   chatOpen,
+  tone,
+  onToneChange,
   audioVisualizerType,
   audioVisualizerColor,
   audioVisualizerColorShift,
@@ -110,167 +80,118 @@ export function TileLayout({
           ? 'thinking'
           : 'ready';
 
-  const animationDelay = chatOpen ? 0 : 0.15;
   const isAvatar = agentVideoTrack !== undefined;
   const videoWidth = agentVideoTrack?.publication.dimensions?.width ?? 0;
   const videoHeight = agentVideoTrack?.publication.dimensions?.height ?? 0;
 
   return (
-    <div className="absolute inset-x-0 top-8 bottom-32 z-50 md:top-12 md:bottom-40">
-      <div className="relative mx-auto h-full max-w-2xl px-4 md:px-0">
-        <div className={cn(tileViewClassNames.grid)}>
-          {/* Agent */}
-          <div
-            className={cn([
-              'grid',
-              !chatOpen && tileViewClassNames.agentChatClosed,
-              chatOpen && hasSecondTile && tileViewClassNames.agentChatOpenWithSecondTile,
-              chatOpen && !hasSecondTile && tileViewClassNames.agentChatOpenWithoutSecondTile,
-            ])}
-          >
-            <AnimatePresence mode="popLayout">
-              {!isAvatar && (
-                // Audio Agent
-                <motion.div
-                  key="agent"
-                  layoutId="agent"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{
-                    ...ANIMATION_TRANSITION,
-                    delay: animationDelay,
-                  }}
-                  className={cn('relative aspect-square h-[90px]')}
+    <div className="relative h-full w-full">
+      {/* Stage — flex-centred, clipped so the ring never overflows the screen */}
+      <div className="absolute inset-0 flex items-center justify-center overflow-hidden px-4 md:px-8">
+        {/* Healing halo behind everything */}
+        <div
+          aria-hidden
+          className="absolute top-1/2 left-1/2 size-[min(80vw,360px)] -translate-x-1/2 -translate-y-1/2 rounded-full blur-2xl md:size-[min(46vw,480px)]"
+          style={{
+            background:
+              'radial-gradient(circle at center, color-mix(in srgb, #2dd4bf 20%, transparent), transparent 70%)',
+          }}
+        />
+
+        <AnimatePresence mode="popLayout">
+          {!isAvatar ? (
+            <motion.div
+              key="agent"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ ...ANIMATION_TRANSITION, delay: 0.15 }}
+              className="relative flex flex-col items-center"
+            >
+              {/* Circular stage — sized to fit BOTH dimensions so it never overflows */}
+              <div className="relative aspect-square w-[min(84vw,50vh,400px)] md:w-[min(72vw,54vh,540px)]">
+                {/* Audio visualizer — clipped inside the circle, scaled to fit */}
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 overflow-hidden rounded-full"
                 >
-                  {/* Healing garden halo behind the visualizer */}
-                  <div
-                    aria-hidden
-                    className="absolute top-1/2 left-1/2 size-[320px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-2xl md:size-[460px]"
-                    style={{
-                      background:
-                        'radial-gradient(circle at center, color-mix(in srgb, #6b8e71 18%, transparent), transparent 70%)',
-                    }}
-                  />
-                  <AudioVisualizer
-                    key="audio-visualizer"
-                    initial={{ scale: 1 }}
-                    animate={{ scale: chatOpen ? 0.2 : 1 }}
-                    transition={{
-                      ...ANIMATION_TRANSITION,
-                      delay: animationDelay,
-                    }}
-                    audioVisualizerType={audioVisualizerType}
-                    audioVisualizerColor={audioVisualizerColor}
-                    audioVisualizerColorShift={audioVisualizerColorShift}
-                    audioVisualizerBarCount={audioVisualizerBarCount}
-                    audioVisualizerRadialBarCount={audioVisualizerRadialBarCount}
-                    audioVisualizerRadialRadius={audioVisualizerRadialRadius}
-                    audioVisualizerGridRowCount={audioVisualizerGridRowCount}
-                    audioVisualizerGridColumnCount={audioVisualizerGridColumnCount}
-                    audioVisualizerWaveLineWidth={audioVisualizerWaveLineWidth}
-                    isChatOpen={chatOpen}
-                    className={cn(
-                      'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2',
-                      'bg-background rounded-[50px] border border-transparent transition-[border,drop-shadow]',
-                      chatOpen && 'border-input shadow-2xl/10 delay-200'
-                    )}
-                    style={{ color: audioVisualizerColor }}
-                  />
-                  {/* The one doctor — stays centered while the ring dances around him */}
-                  <div className="absolute top-1/2 left-1/2 size-[116px] -translate-x-1/2 -translate-y-1/2 drop-shadow-xl md:size-[150px]">
-                    <DoctorAvatar state={doctorState} />
+                  <div className="absolute inset-0 grid place-items-center">
+                    <div className="scale-[0.9] sm:scale-100 md:scale-[1.2] xl:scale-[1.6]">
+                      <AudioVisualizer
+                        audioVisualizerType={audioVisualizerType}
+                        audioVisualizerColor={audioVisualizerColor}
+                        audioVisualizerColorShift={audioVisualizerColorShift}
+                        audioVisualizerBarCount={audioVisualizerBarCount}
+                        audioVisualizerRadialBarCount={audioVisualizerRadialBarCount}
+                        audioVisualizerRadialRadius={audioVisualizerRadialRadius}
+                        audioVisualizerGridRowCount={audioVisualizerGridRowCount}
+                        audioVisualizerGridColumnCount={audioVisualizerGridColumnCount}
+                        audioVisualizerWaveLineWidth={audioVisualizerWaveLineWidth}
+                        isChatOpen={chatOpen}
+                        className="border-transparent bg-transparent"
+                        style={{ color: audioVisualizerColor }}
+                      />
+                    </div>
                   </div>
-                </motion.div>
-              )}
+                </div>
 
-              {isAvatar && (
-                // Avatar Agent
-                <motion.div
-                  key="avatar"
-                  layoutId="avatar"
-                  initial={{
-                    scale: 1,
-                    opacity: 1,
-                    maskImage:
-                      'radial-gradient(circle, rgba(0, 0, 0, 1) 0, rgba(0, 0, 0, 1) 20px, transparent 20px)',
-                    filter: 'blur(20px)',
-                  }}
-                  animate={{
-                    maskImage:
-                      'radial-gradient(circle, rgba(0, 0, 0, 1) 0, rgba(0, 0, 0, 1) 500px, transparent 500px)',
-                    filter: 'blur(0px)',
-                    borderRadius: chatOpen ? 6 : 12,
-                  }}
-                  transition={{
-                    ...ANIMATION_TRANSITION,
-                    delay: animationDelay,
-                    maskImage: {
-                      duration: 1,
-                    },
-                    filter: {
-                      duration: 1,
-                    },
-                  }}
-                  className={cn(
-                    'overflow-hidden bg-black drop-shadow-xl/80',
-                    chatOpen ? 'h-[90px]' : 'h-auto w-full'
-                  )}
-                >
-                  <VideoTrack
-                    width={videoWidth}
-                    height={videoHeight}
-                    trackRef={agentVideoTrack}
-                    className={cn(chatOpen && 'size-[90px] object-cover')}
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+                {/* Glass disc behind the doctor — a clear, centred focus */}
+                <div
+                  aria-hidden
+                  className="absolute inset-[20%] rounded-full border border-white/15 bg-white/5 shadow-[0_10px_40px_-12px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.15)] backdrop-blur-sm"
+                />
 
-          <div
-            className={cn([
-              'grid',
-              chatOpen && tileViewClassNames.secondTileChatOpen,
-              !chatOpen && tileViewClassNames.secondTileChatClosed,
-            ])}
-          >
-            {/* Camera & Screen Share */}
-            <AnimatePresence>
-              {((cameraTrack && isCameraEnabled) || (screenShareTrack && isScreenShareEnabled)) && (
-                <motion.div
-                  key="camera"
-                  layout="position"
-                  layoutId="camera"
-                  initial={{
-                    opacity: 0,
-                    scale: 0,
-                  }}
-                  animate={{
-                    opacity: 1,
-                    scale: 1,
-                  }}
-                  exit={{
-                    opacity: 0,
-                    scale: 0,
-                  }}
-                  transition={{
-                    ...ANIMATION_TRANSITION,
-                    delay: animationDelay,
-                  }}
-                  className="aspect-square size-[90px] drop-shadow-lg/20"
-                >
-                  <VideoTrack
-                    trackRef={cameraTrack || screenShareTrack}
-                    width={(cameraTrack || screenShareTrack)?.publication.dimensions?.width ?? 0}
-                    height={(cameraTrack || screenShareTrack)?.publication.dimensions?.height ?? 0}
-                    className="bg-muted aspect-square size-[90px] rounded-md object-cover"
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </div>
+                {/* The doctor — centred in the disc, scaled with the stage */}
+                <div className="absolute inset-0 grid place-items-center">
+                  <div className="w-[52%]">
+                    <DoctorAvatar state={doctorState} tone={tone} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Empathy / expression panel */}
+              <div className="relative mt-3 sm:mt-4">
+                <ExpressionPanel tone={tone} onToneChange={onToneChange} />
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="avatar"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ ...ANIMATION_TRANSITION, delay: 0.15 }}
+              className="relative overflow-hidden rounded-2xl bg-black drop-shadow-xl/80"
+            >
+              <VideoTrack
+                width={videoWidth}
+                height={videoHeight}
+                trackRef={agentVideoTrack}
+                className="h-full w-full object-cover"
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
+
+      {/* Camera / screen-share chip — tucked below the header, clear of the transcript */}
+      <AnimatePresence>
+        {hasSecondTile && (
+          <motion.div
+            key="camera"
+            initial={{ opacity: 0, scale: 0 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0 }}
+            transition={ANIMATION_TRANSITION}
+            className="absolute top-2 right-2 z-10 md:top-4 md:right-6"
+          >
+            <VideoTrack
+              trackRef={cameraTrack || screenShareTrack}
+              width={(cameraTrack || screenShareTrack)?.publication.dimensions?.width ?? 0}
+              height={(cameraTrack || screenShareTrack)?.publication.dimensions?.height ?? 0}
+              className="bg-muted aspect-square size-20 rounded-lg object-cover md:size-24"
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

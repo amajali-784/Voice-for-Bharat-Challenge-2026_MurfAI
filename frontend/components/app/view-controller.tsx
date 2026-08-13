@@ -117,7 +117,7 @@ export function ViewController({ appConfig }: ViewControllerProps) {
           audioVisualizerRadialRadius={appConfig.audioVisualizerRadialRadius}
           audioVisualizerWaveLineWidth={appConfig.audioVisualizerWaveLineWidth}
           statusLabels={appConfig.statusLabels}
-          className="fixed inset-0"
+          className="fixed inset-x-0 top-[84px] h-[calc(100svh-84px)] md:top-[92px] md:h-[calc(100svh-92px)]"
         />
       );
     }
