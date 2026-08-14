@@ -30,6 +30,15 @@ Day 8 adds: call analytics.  When a call ends, the entrypoint records its
 outcome (success/failed + why) into an anonymised SQLite store (`analytics.py`)
 and an admin HTTP API (`analytics_api.py`) feeds a frontend dashboard.  Only
 counts, timings and tool names are stored — never transcripts or private data.
+
+Day 9 adds: a specialist agent.  `ClinicAppointmentSpecialist` is a focused
+agent whose only job is planning clinic/hospital visits — appointments, OPD
+tokens, opening times, documents to bring, how to prepare.  The main agent
+(`Assistant`) decides when a caller needs that and hands the conversation over
+via the `transfer_to_appointment_specialist` tool; the specialist inherits the
+caller's memory and full conversation, introduces itself, and can hand the
+conversation back with `transfer_back_to_main_agent` when the caller's need is
+really the main agent's job (symptoms, diagnosis, facility lookup).
 """
 
 import asyncio
@@ -207,6 +216,71 @@ STYLE
   पढ़ने के लिए नहीं।
 - उपकरण से मिली सूची को कभी JSON या सूची की तरह न पढ़ें — उसे बातचीत में बदलें:
   "एम्स, आपसे लगभग दो किलोमीटर दूर, नई दिल्ली में है।"
+
+HANDOFF (विशेषज्ञ को सौंपना — transfer_to_appointment_specialist)
+- जब कॉलर डॉक्टर/अस्पताल/क्लिनिक/PHC के पास जाने की योजना बनाना चाहे — अपॉइंटमेंट या
+  OPD टोकन लेना, क्लिनिक के समय, मिलने के लिए कौन-से दस्तावेज़ चाहिए, या विज़िट की तैयारी
+  — तो transfer_to_appointment_specialist उपकरण कॉल करें और पहले एक छोटे वाक्य में बताएं
+  कि आप कॉलर को क्लिनिक और अपॉइंटमेंट स्पेशलिस्ट से जोड़ रहे हैं।
+- हस्तांतरण सिर्फ़ इसी काम के लिए है। लक्षण-सलाह, नज़दीकी सुविधा की जानकारी,
+  याददाश्त और एस्केलेशन आपके पास ही रहते हैं — इनके लिए कभी हस्तांतरण न करें।
+- हस्तांतरण के बाद विशेषज्ञ कॉलर का इतिहास देख सकता है, उसे आगे मदद करता है, और
+  ज़रूरत पड़ने पर बातचीत वापस आपको सौंप सकता है।
+""".strip()
+
+
+# ---------------------------------------------------------------------------
+# SPECIALIST SYSTEM PROMPT — Clinic & Appointment, Day 9
+# The main agent hands the conversation here when the caller wants to plan a
+# hospital/clinic visit.  Kept deliberately narrower than SYSTEM_PROMPT.
+# ---------------------------------------------------------------------------
+CLINIC_APPOINTMENT_PROMPT = """
+IDENTITY
+आपका नाम "अपॉइंटमेंट सहायक" है — आप स्वास्थ्य सहायक की टीम के क्लिनिक और अपॉइंटमेंट
+स्पेशलिस्ट हैं। मुख्य स्वास्थ्य सहायक ने आपको यह कॉलर सौंपा है। आपका एक ही काम है:
+लोगों की डॉक्टर/अस्पताल/क्लिनिक/PHC विज़िट की योजना बनाने में मदद करना।
+
+JOB (आपका काम — यही और सिर्फ़ यही)
+1. अपॉइंटमेंट या OPD टोकन कैसे लेना है और क्लिनिक कब खुला रहता है, समझाना।
+2. विज़िट की तैयारी बताना: कौन-से दस्तावेज़ साथ ले जाने हैं (ID/Aadhaar, पुरानी पर्ची,
+   रिपोर्ट, दवाओं की सूची), कितनी जल्दी पहुँचना चाहिए, किस काउंटर/विभाग में जाना है।
+3. नज़दीकी क्लिनिक/अस्पताल खोजने में मदद करना (find_nearby_health_facilities) और वहाँ
+   विज़िट की योजना बनाना।
+4. कॉलर की विज़िट की योजना याद रखना (book_appointment / save_caller_info) ताकि अगली
+   बार बिना दोबारा पूछे मदद कर सकें।
+
+LIMITS (आप क्या नहीं करते)
+- आप डॉक्टर नहीं हैं। लक्षणों पर सलाह, निदान, दवा/डोज़ की जानकारी, या आपातकालीन (red-flag)
+  लक्षणों की सलाह आपका काम नहीं है।
+- कॉलर अगर लक्षण/निदान/दवा पूछे या कोई गंभीर लक्षण बताए, तो विनम्रता से कहें कि यह मुख्य
+  स्वास्थ्य सहायक का काम है और transfer_back_to_main_agent से बातचीत वापस सौंप दें।
+- कभी किसी क्लिनिक के घंटे, फ़ोन नंबर, या अपॉइंटमेंट की उपलब्धता खुद से न बनाएं। जब
+  आपको पक्की जानकारी न हो, तो साफ़ कहें कि नहीं जानते और क्लिनिक/PHC से सीधे पूछने या
+  ASHA वर्कर से बात करने का सुझाव दें।
+- खुद को मुख्य स्वास्थ्य सहायक के रूप में पेश न करें — आप अपॉइंटमेंट स्पेशलिस्ट हैं।
+
+TOOLS (आपके उपकरण)
+- lookup_caller / save_caller_info / add_note — कॉलर के बारे में याद रखना (नाम, इलाका,
+  विज़िट की पसंद)। बातचीत शुरू करते समय lookup_caller से सहेजी जानकारी देखें।
+- find_nearby_health_facilities — नज़दीकी क्लिनिक/अस्पताल/फ़ार्मेसी खोजना। कॉलर की सहेजी
+  location से चेन करें — दोबारा इलाका न पूछें।
+- book_appointment — जब कॉलर ने किसी क्लिनिक/अस्पताल में मिलने की योजना तय कर ली हो, तो
+  उसे याद रखने के लिए कॉल करें।
+- transfer_back_to_main_agent — जब आपका काम पूरा हो जाए, कॉलर का सवाल आपके दायरे से
+  बाहर हो, या वे लक्षण/निदान/दवा की बात करें, तो बातचीत वापस मुख्य स्वास्थ्य सहायक को
+  सौंपने के लिए कॉल करें।
+
+LANGUAGE (कोड-मिश्रित भाषा को संभालना)
+- उपयोगकर्ता जिस भाषा या मिश्रण में बोले — हिंदी, अंग्रेज़ी, Hinglish — उसी रजिस्टर में
+  जवाब दें। अगर वे पूरी तरह अंग्रेज़ी में बोलें, तो भारतीय अंग्रेज़ी में जवाब दें।
+- हर भाषा को उसकी अपनी मूल लिपि में लिखें (हिंदी → देवनागरी, कभी रोमन में नहीं)।
+- हमेशा सम्मानजनक "आप" का प्रयोग करें, "तुम" का नहीं।
+
+STYLE
+- छोटे, स्पष्ट वाक्य — यह एक फोन कॉल है। एक बार में एक ही बात पूछें।
+- गर्मजोशी और धैर्य के साथ बोलें। कभी बुलेट पॉइंट, ब्रैकेट, या 20 शब्दों से लंबे
+  वाक्य न बोलें।
+- विज़िट की तैयारी बताते समय 1-2 सबसे ज़रूरी बातें ही बताएं, पूरी सूची नहीं।
 """.strip()
 
 
@@ -489,6 +563,153 @@ class Assistant(Agent):
                 "reach out shortly; do not promise an immediate reply."
             ),
         }
+
+    @function_tool
+    async def transfer_to_appointment_specialist(
+        self, ctx: RunContext
+    ) -> tuple[Agent, str]:
+        """Hand the conversation to the clinic & appointment specialist.
+
+        Use this ONLY when the caller wants to plan an actual visit to a doctor,
+        hospital, clinic or PHC — booking an appointment or OPD token, clinic
+        opening times, what documents to bring, or how to prepare for a visit.
+        Return a ClinicAppointmentSpecialist that continues the same
+        conversation with the caller's saved memory, so they don't repeat
+        themselves.
+
+        Do NOT use this for symptom advice, nearby-facility lookup, caller
+        memory, or escalation — those stay with you.  Say a short handoff line
+        to the caller first (e.g. "मैं आपको हमारे क्लिनिक और अपॉइंटमेंट
+        स्पेशलिस्ट से जोड़ता हूँ।").
+        """
+        specialist = ClinicAppointmentSpecialist(
+            chat_ctx=self.chat_ctx.copy(exclude_instructions=True)
+        )
+        return (
+            specialist,
+            "मैं आपको हमारे क्लिनिक और अपॉइंटमेंट स्पेशलिस्ट से जोड़ रहा हूँ।",
+        )
+
+
+class ClinicAppointmentSpecialist(Assistant):
+    """The specialist agent (Day 9): plans clinic/hospital visits only.
+
+    Inherits the caller-memory and facility-lookup tools from `Assistant` but
+    carries its own narrow instructions (`CLINIC_APPOINTMENT_PROMPT`) and adds
+    `book_appointment` plus `transfer_back_to_main_agent`.  It deliberately
+    overrides `create_escalation` and `transfer_to_appointment_specialist` with
+    plain (non-tool) methods so those tools are NOT offered to the specialist.
+    """
+
+    def __init__(
+        self,
+        *,
+        instructions: str | None = None,
+        chat_ctx=None,
+        **kwargs,
+    ) -> None:
+        super().__init__(
+            instructions=instructions or CLINIC_APPOINTMENT_PROMPT,
+            chat_ctx=chat_ctx,
+            **kwargs,
+        )
+
+    async def on_enter(self) -> None:
+        """Introduce the specialist after a handoff so the caller knows who is
+        now helping them and that the conversation has continued."""
+        name = None
+        try:
+            userdata = self.session.userdata
+            profile = userdata.get("store", MEMORY_STORE).get(
+                userdata.get("caller_id", "anonymous")
+            )
+            if profile:
+                name = profile.get("name")
+        except Exception:
+            name = None
+        greeting = f"नमस्ते {name} जी, " if name else "नमस्ते, "
+        await self.session.generate_reply(
+            allow_interruptions=False,
+            instructions=(
+                f"{greeting}आपने क्लिनिक और अपॉइंटमेंट स्पेशलिस्ट से बात कर रहे हैं। "
+                "एक वाक्य में बताएं कि आप उनकी डॉक्टर/अस्पताल/क्लिनिक विज़िट की योजना "
+                "बनाने में मदद करेंगे, फिर पूछें कि वे कहाँ और कब मिलना चाहते हैं। "
+                "छोटा और गर्मजोशी भरा रखें।"
+            ),
+        )
+
+    @function_tool
+    async def book_appointment(
+        self,
+        ctx: RunContext,
+        clinic: str,
+        date: str,
+        time: str,
+        reason: str,
+    ) -> dict:
+        """Record a caller's planned clinic/hospital visit so we can help them
+        prepare and remember it on a future call.
+
+        Call this once the caller has settled on where and when they will go
+        (clinic, date and time).  The plan is stored in the caller's memory
+        notes.  The specialist then guides them on what to bring and how to
+        prepare — this tool only records the plan; it does not book anything
+        on a clinic's behalf, and you must never invent a booking number.
+
+        Args:
+            clinic: Which hospital/clinic/PHC the caller will visit.
+            date: When they plan to go (e.g. "सोमवार" or a date).
+            time: Preferred time (e.g. "सुबह 10 बजे").
+            reason: Why they are going (e.g. "आँखों की जाँच", follow-up).
+        """
+        store = self._store(ctx)
+        caller_id = self._caller_id(ctx)
+        profile = store.get(caller_id) or {"caller_id": caller_id}
+        note = f"Appointment planned: {clinic}, {date}, {time}, reason: {reason}"
+        notes = list(profile.get("notes") or [])
+        if note not in notes:
+            notes.append(note)
+        store.upsert({**profile, "notes": notes})
+        logger.info("appointment planned for caller %s at %s", caller_id, clinic)
+        return {
+            "saved": True,
+            "message": (
+                "The visit plan is recorded. Guide the caller on what to bring "
+                "(ID/Aadhaar, previous prescriptions, reports) and when to arrive. "
+                "Do not claim an appointment was actually booked."
+            ),
+        }
+
+    @function_tool
+    async def transfer_back_to_main_agent(self, ctx: RunContext) -> tuple[Agent, str]:
+        """Hand the conversation back to the main Swasthya Sahayak assistant.
+
+        Use this when the caller's request is outside appointment planning:
+        symptom advice, a diagnosis question, medicine advice, an emergency or
+        red-flag symptom, or a nearby-facility lookup — or when the appointment
+        help is complete and the caller wants general health help.  The main
+        agent continues the same conversation.
+        """
+        main_agent = Assistant(chat_ctx=self.chat_ctx.copy(exclude_instructions=True))
+        return (
+            main_agent,
+            "मैं बातचीत वापस मुख्य स्वास्थ्य सहायक को सौंप रहा हूँ।",
+        )
+
+    async def create_escalation(self, *args, **kwargs) -> str:
+        """Not a tool here — escalations are the main agent's job.  The
+        specialist routes red-flag / diagnosis needs back via
+        `transfer_back_to_main_agent` instead.  (Override removes the inherited
+        tool from the specialist's toolset.)"""
+        return (
+            "Escalations are handled by the main Swasthya Sahayak agent. "
+            "Hand the conversation back instead."
+        )
+
+    async def transfer_to_appointment_specialist(self, *args, **kwargs) -> str:
+        """Not a tool here — the specialist never transfers to itself.
+        (Override removes the inherited tool from the specialist's toolset.)"""
+        return "You are already the clinic and appointment specialist."
 
 
 def prewarm(proc: JobProcess) -> None:

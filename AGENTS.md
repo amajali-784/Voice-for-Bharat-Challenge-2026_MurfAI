@@ -37,8 +37,9 @@ voice-for-bharat-challenge-2026/
 ### Key file: `backend/src/agent.py`
 This is the single entrypoint. It contains:
 - `SYSTEM_PROMPT` — controls the agent's behavior (change this to change the use case)
-- `Assistant` class — extends `Agent`, where tools are added via `@function_tool` (Day 4: `lookup_caller`, `save_caller_info`, `add_note`, `forget_caller`; Day 5: `find_nearby_health_facilities`; Day 7: `create_escalation`)
-- `my_agent()` — sets up the voice pipeline (STT → LLM → TTS) and connects to LiveKit
+- `Assistant` class — extends `Agent`, where tools are added via `@function_tool` (Day 4: `lookup_caller`, `save_caller_info`, `add_note`, `forget_caller`; Day 5: `find_nearby_health_facilities`; Day 7: `create_escalation`; Day 9: `transfer_to_appointment_specialist`)
+- `ClinicAppointmentSpecialist` class — the Day 9 specialist agent (appointment planning), with its own `CLINIC_APPOINTMENT_PROMPT`, `book_appointment` and `transfer_back_to_main_agent` tools
+- `entrypoint()` — sets up the voice pipeline (STT → LLM → TTS) and connects to LiveKit
 - `prewarm()` — pre-loads the Silero VAD model
 
 ### Health-facility lookup (Day 5)
@@ -98,6 +99,32 @@ This is the single entrypoint. It contains:
   chart and a recent-calls table, with a live auto-refresh toggle. Base URL
   `NEXT_PUBLIC_ANALYTICS_API_URL` (default `http://localhost:8702`).
 
+### Agent handoff (Day 9)
+- `backend/src/agent.py` defines a second, focused agent: `ClinicAppointmentSpecialist`
+  ("अपॉइंटमेंट सहायक", prompt `CLINIC_APPOINTMENT_PROMPT`) whose only job is planning
+  clinic/hospital visits — appointments/OPD tokens, opening times, documents to bring,
+  how to prepare. It inherits the caller-memory + facility tools from `Assistant` and
+  adds `book_appointment` (records the visit plan in caller notes) and
+  `transfer_back_to_main_agent`.
+- Routing: the main `Assistant` has a `transfer_to_appointment_specialist` tool
+  (decorated with `@function_tool`). It returns
+  `(ClinicAppointmentSpecialist(chat_ctx=self.chat_ctx.copy(exclude_instructions=True)), message)`
+  so the specialist sees the caller's prior turns (no re-explaining) and the caller
+  hears a handoff line first. The specialist's `on_enter` introduces itself.
+- The specialist deliberately overrides `create_escalation` and
+  `transfer_to_appointment_specialist` with plain (non-`@function_tool`) methods so
+  those tools are NOT offered to it. Keep that pattern when editing: tools are
+  discovered with `inspect.getmembers`, so a subclass override without the decorator
+  removes an inherited tool.
+- The `HANDOFF` section of `SYSTEM_PROMPT` tells the main agent to hand off only for
+  appointment-planning requests and to keep symptoms, facility lookup, memory and
+  escalation itself. The `LIMITS` section of `CLINIC_APPOINTMENT_PROMPT` tells the
+  specialist to hand back for symptoms/diagnosis/medicine questions.
+- Tests: `backend/tests/test_handoff.py` — network-free unit tests for the handoff
+  tool, specialist toolset and `book_appointment`, plus LLM-as-judge routing evals
+  (normal question stays; appointment request hands off and the specialist continues;
+  specialist hands back when the caller changes topic).
+
 ### Caller memory (Day 4)
 - `backend/src/memory.py` — `CallerStore` (SQLite, WAL). `upsert` does a partial merge: `None` fields are left untouched, list fields (conditions/medications/allergies/notes) are deduped and appended.
 - `backend/src/memory_api.py` — stdlib HTTP admin API. Default `127.0.0.1:8700`, override with `MEMORY_API_HOST` / `MEMORY_API_PORT`.
@@ -136,7 +163,7 @@ uv run ruff format .
 Config is in `pyproject.toml` — 88 char line length, double quotes, space indent.
 
 ### Testing
-Tests are in `backend/tests/test_agent.py` (LLM-as-judge evals), `backend/tests/test_memory.py` (CallerStore), `backend/tests/test_tools.py` (tool methods with a fake RunContext), `backend/tests/test_facilities.py` (lookup logic; network is monkeypatched so tests never hit Overpass/Nominatim), `backend/tests/test_escalation.py` (Day 7 human-help store + sanitizer + tool + agent evals), and `backend/tests/test_analytics.py` (Day 8 call classification, privacy and store tests — network-free, plus one agent-level eval). They use LiveKit's testing framework with LLM-as-judge evaluation (not mocks). Run with:
+Tests are in `backend/tests/test_agent.py` (LLM-as-judge evals), `backend/tests/test_memory.py` (CallerStore), `backend/tests/test_tools.py` (tool methods with a fake RunContext), `backend/tests/test_facilities.py` (lookup logic; network is monkeypatched so tests never hit Overpass/Nominatim), `backend/tests/test_escalation.py` (Day 7 human-help store + sanitizer + tool + agent evals), `backend/tests/test_analytics.py` (Day 8 call classification, privacy and store tests — network-free, plus one agent-level eval), and `backend/tests/test_handoff.py` (Day 9 specialist handoff — network-free unit tests plus LLM-as-judge routing evals). They use LiveKit's testing framework with LLM-as-judge evaluation (not mocks). Run with:
 ```bash
 uv run pytest
 ```
