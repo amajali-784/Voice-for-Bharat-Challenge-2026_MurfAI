@@ -1,475 +1,304 @@
-# स्वास्थ्य सहायक (Swasthya Sahayak) — Voice Agent Starter, Powered by Murf Falcon
+# Day 10 — Share Your Voice Agent Journey
 
-Built for **10 Days of AI Voice Agents — #VoiceForBharat Edition**, Day 8.
-
+**Challenge:** [10 Days of Voice Agents — #VoiceForBharat Edition](https://github.com/murf-ai/voice-for-bharat-challenge-2026)
 **Track:** Health Access
+**Official task:** [`challenges/Day 10 Task.md`](https://github.com/murf-ai/voice-for-bharat-challenge-2026/blob/main/challenges/Day%2010%20Task.md)
 
-**Voice:** `hi-IN-anisha` — Murf Falcon, Hindi (multilingual: 13 Indian locales)
-
-**Why this voice:** Anisha is a calm, patient, trustworthy Hindi voice that also speaks English and 12 other Indian languages, so the assistant can naturally switch register with every caller — ideal for a health-guidance line that serves a multilingual Bharat.
-
-Forked from the original [Murf LiveKit Starter](https://github.com/murf-ai/murf-livekit-starter) and customized into a Hindi-speaking health-access assistant that helps people understand symptoms in plain language, points them to nearby care, always defers real diagnosis to a doctor, and **remembers callers between calls**.
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Murf Falcon](https://img.shields.io/badge/TTS-Murf%20Falcon-6366F1)](https://murf.ai/api/docs/text-to-speech/streaming) [![LiveKit](https://img.shields.io/badge/Transport-LiveKit-002cf2)](https://docs.livekit.io) [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/) [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+> Over the last nine days, you built a voice agent that can talk, follow
+> guardrails, remember users, use tools, make outbound calls, ask humans for
+> help, track call outcomes, and hand conversations to a specialist. Today, you
+> will share what you learned so someone else can build one too.
 
 ---
 
-## What this agent does
+## The Day 10 task (official)
 
-- Listens and replies in the caller's own register — Hindi, English, or Hinglish — using simple, non-technical language.
-- Helps users talk through symptoms conversationally — without ever diagnosing or prescribing.
-- Points users toward nearby health centres and explains when a symptom warrants urgent care.
-- **Looks up real nearby facilities** — when a caller asks for a hospital, clinic, doctor or pharmacy, it finds actual, current facilities near their village/town (live OpenStreetMap data, with a curated offline fallback), says where the data came from and how fresh it is, and speaks a graceful fallback if the data source is down.
-- Always defers to a real doctor or the **108** emergency line for anything serious.
-- **Remembers returning callers** (name, village, conditions, medicines, allergies) via a SQLite-backed memory store, so a second call doesn't start from zero.
-- Forgets everything on request — the caller can ask to be erased, and an admin page lists what's remembered.
-- **Makes outbound calls** — instead of only answering, the agent dials out to remind people about a medication, vaccination, or follow-up. Every call opens with *who is calling, why, and how to stop the calls* ("कॉल बंद करो"), and an opt-out is recorded forever so the agent never calls again.
+1. **Choose a format** for your blog post — a story, a build guide, or both.
+2. **Introduce your agent** — the problem, your track, who it is for, and why voice.
+3. **Describe the important features** — the ones that best tell your story.
+4. **Write about the difficult parts** — what went wrong, what you tried, what worked.
+5. **Help the reader build their own** — components, setup, API keys, testing.
+6. **Add evidence** — screenshots, diagrams, code snippets, demo links.
+7. **Publish the post** on any public blogging platform (Medium, DEV, Hashnode…).
+8. **Share it on LinkedIn** — Murf Falcon (fastest TTS API), 10 Days of Voice
+   Agents, tag **Murf AI**, **#VoiceForBharat**.
+9. **Submit your LinkedIn post link** on the Day 10 submission form.
+
+**"You've finished Day 10 if":**
+- ☐ The blog explains what your agent does and who it helps
+- ☐ It covers important features without listing every day
+- ☐ It honestly describes at least one difficulty and how you handled it
+- ☐ It gives readers a practical starting point to build their own
+- ☐ It links to your public repository and exposes no private information
+- ☐ The blog is published and the LinkedIn post is live
 
 ---
 
-## Why Murf Falcon
+## Our submission at a glance
 
-- **55ms model latency** — fastest production TTS
-- **130ms time-to-first-audio** across 10+ global regions
-- **$0.01/1000 characters** — up to 10x cheaper than alternatives
-- **150+ voices** across 35+ languages, including 11 Indian languages
-- **99.38% pronunciation accuracy**
+| Deliverable | Where | Status |
+| --- | --- | --- |
+| Blog post | Medium (draft below) | ☐ publish |
+| LinkedIn post | LinkedIn (draft below) | ☐ publish |
+| Repository | https://github.com/amajali-784/voice-for-bharat-challenge-2026 | ☐ live |
+| Submission form | Day 10 Google Form (blog + LinkedIn + repo links) | ☐ submit |
+
+The project — **स्वास्थ्य सहायक (Swasthya Sahayak)**, a bilingual Hindi/English
+Health Access voice agent — is fully documented across the 10 days:
+
+| Day | What was built | Documented in |
+| --- | --- | --- |
+| 4 | Persistent caller memory (SQLite) + `/admin` page | `README.md` |
+| 5 | Real nearby health-facility lookup (live OSM + offline fallback) | `README.md` |
+| 6 | Outbound reminder calls (SIP, opt-out) | `Day6.md` |
+| 7 | Human-help escalations + `/escalations` dashboard | `Day7.md` |
+| 8 | Anonymised call analytics + `/analytics` dashboard | `Day8.md` |
+| 9 | Clinic-appointment specialist handoff | `backend/tests/test_handoff.py` |
+| 10 | Blog post + LinkedIn post + submission | `Day10.md` (this file) |
 
 ---
 
-## Architecture
+## Blog post (draft — paste into Medium)
 
-```mermaid
-flowchart LR
-    A[🎙️ Caller speaks Hindi/Hinglish] -->|audio| B[Deepgram STT — nova-3, multilingual]
-    B -->|text| C[Gemini LLM + tools]
-    C <-->|lookup / save / forget| M[(SQLite caller memory)]
-    C --find_nearby_health_facilities--> F[facilities.py<br/>live OSM + offline fallback]
-    F -->|source + data_as_of + names| C
-    C -->|response text| D[Murf Falcon TTS — hi-IN-anisha]
-    D -->|audio| E[LiveKit]
-    E -->|stream| G[🔊 Caller hears Hindi reply]
-    M -->|GET /callers| H[Admin page /admin]
+> ### How to publish in Medium
+> 1. Paste the whole draft into Medium's editor.
+> 2. Apply **Heading 1 / Heading 2** to the section titles via the toolbar.
+> 3. Turn the code blocks into code blocks with the `</>` toolbar button.
+> 4. Replace the `[PLACEHOLDER]` bits before publishing.
+> 5. Publish, then paste the live URL into the LinkedIn draft below.
 
-    style A fill:#444441,stroke:#888780,color:#fff
-    style B fill:#185FA5,stroke:#85B7EB,color:#fff
-    style C fill:#534AB7,stroke:#AFA9EC,color:#fff
-    style D fill:#0F6E56,stroke:#5DCAA5,color:#fff
-    style E fill:#D85A30,stroke:#F0997B,color:#fff
-    style F fill:#0E5F6E,stroke:#5FC2D1,color:#fff
-    style G fill:#444441,stroke:#888780,color:#fff
-    style H fill:#444441,stroke:#888780,color:#fff
+---
+
+### I Built a Hindi Voice Agent for Health Access in 10 Days — and It Remembers Callers, Looks Up Real Hospitals, and Calls You Back
+
+**The problem.** Half of India's population lives in rural and semi-urban
+areas, and for most of them the first point of health guidance is a family
+member, a local pharmacy, or WhatsApp forwards — not a doctor. The nearest PHC
+may be kilometres away, and calling a busy health worker just to ask *"is this
+fever serious?"* feels like wasting their time.
+
+A phone is the one piece of technology almost everyone in that situation
+already owns and knows how to use. An AI voice agent can sit on the other end
+of that call and do the jobs that should never wait for a booking: explain
+symptoms in plain language, say which symptoms need urgent care, point to the
+nearest real facility, and remember a returning caller so a second call doesn't
+start from zero.
+
+That is what I built during **10 Days of Voice Agents — VoiceForBharat
+Edition**, on the **Health Access** track. The result is **स्वास्थ्य सहायक
+(Swasthya Sahayak)** — "Health Assistant" — a Hindi-speaking voice agent that
+helps people in rural and semi-urban India make sense of their symptoms, and
+never pretends to be a doctor.
+
+**What the agent does.**
+
+- Listens and replies in the caller's own register — Hindi, English, or
+  Hinglish — in simple, non-technical language.
+- Talks through symptoms conversationally, without ever diagnosing or prescribing.
+- Looks up real nearby health facilities (hospitals, clinics, PHCs, pharmacies)
+  from live OpenStreetMap data, with a curated offline fallback, and says out
+  loud where the data came from and how fresh it is.
+- Remembers returning callers — name, village, conditions, medicines,
+  allergies — across calls, and forgets everything on request.
+- Escalates red-flag symptoms (chest pain, trouble breathing, stroke-like
+  weakness…) straight to "call 108 / go to the hospital", and can file a
+  human-help request for a health worker — only with the caller's permission.
+- Makes outbound calls to remind people about medication, vaccination, or
+  follow-ups, with a clear opt-out ("कॉल बंद करो").
+- Hands off to a specialist agent when the caller wants to plan a clinic visit —
+  appointments, OPD tokens, what documents to bring.
+- Records every call's anonymised outcome on a live analytics dashboard, so I
+  can see how many calls actually succeed.
+
+**How the system works.** The whole thing is built on the LiveKit Agents
+framework, which wires five pieces into one real-time voice pipeline:
+
+<img width="1440" height="1800" alt="image" src="https://github.com/user-attachments/assets/89bf0e25-9ed1-4cde-936c-82da4d0629fa" />
+
+
+LiveKit handles the real-time transport and the voice activity detection; I
+only had to wire the speech-to-text, the LLM, and the text-to-speech.
+
+The voice is **Murf Falcon's `hi-IN-anisha`** — a calm, patient Hindi voice
+that also speaks English and 12 other Indian languages, so the agent can switch
+register with every caller. Murf Falcon is the fastest TTS API I've tried (55
+ms model latency, ~130 ms time-to-first-audio), and at $0.01/1,000 characters
+it keeps a health line affordable.
+
+**The most important features.**
+
+*1. A real personality with hard guardrails.* The system prompt (in
+`backend/src/agent.py`) gives the agent an identity, objectives, and a strict
+guardrails section. It may help you understand symptoms, but it can never name
+a disease, never suggest a medicine, never claim to be a doctor, and must send
+anyone with a red-flag symptom to 108 or a hospital immediately. I then
+"red-teamed" it with ten adversarial prompts — "direct diagnosis pressure",
+"just guess the disease", drug-naming pressure in Hinglish — and each run is
+logged in `RED_TEAM.md`.
+
+*2. Memory that survives between calls.* A 1-year `caller_id` cookie is minted
+by the frontend token route and used as the LiveKit participant identity. The
+agent resolves that identity on every call and greets a returning caller by
+name. A small SQLite store keeps their profile, and `forget_caller` erases it
+when they ask ("भूल जाइए"). An admin page lists what's remembered with a
+Forget button.
+
+*3. A tool that returns real data — and never hallucinates.*
+`find_nearby_health_facilities` geocodes a place name with Nominatim and pulls
+nearby facilities from the Overpass API (live OpenStreetMap), falling back to a
+curated offline list when the network is down. Every result carries
+`source` (live / local) and `data_as_of`, and the prompt forces the agent to
+say how fresh the data is. If both sources fail it returns
+`status: "unavailable"` and speaks a graceful line — it is explicitly built
+never to invent a hospital name, distance, or phone number.
+
+*4. Knowing when to ask a human.* The agent files a human-help request in
+exactly two situations: a red-flag symptom, or a diagnosis request. It must ask
+permission first — `caller_consent=False` creates nothing — and the summary is
+scrubbed of phone numbers, OTPs, PINs, and Aadhaar numbers before storage. The
+caller gets a reference ID (`ESC-XXXXXX`) and an honest next step, and an
+already-open request is never duplicated. A dashboard at `/escalations` shows
+the queue for a human worker.
+
+*5. Outbound calls.* Instead of only answering, the agent dials out for
+medication and vaccination reminders over a SIP trunk. Every call opens with
+who is calling, why, and how to stop the calls — spoken deterministically so
+the LLM can't skip it — and an opt-out is recorded forever.
+
+*6. Call analytics with privacy by design.* Every call's outcome (success/failed
+and why) is recorded in an anonymised SQLite store — caller IDs are SHA-256
+hashed and no transcripts, names, phones, or medical details are ever stored. A
+live dashboard at `/analytics` shows total / successful / failed calls, success
+rate, per-channel breakdown, failure reasons, a daily trend, and latency.
+`[PLACEHOLDER: paste a screenshot of your dashboard]`
+
+*7. A specialist agent.* When the caller wants to plan a clinic visit, the main
+agent hands off to a focused `ClinicAppointmentSpecialist` that inherits the
+caller's memory and conversation, and can hand the conversation back when the
+topic is outside its job.
+
+All of this is covered by a growing pytest suite — memory, facility lookup,
+escalation, analytics, handoff — including LLM-as-judge evals that run real
+simulated conversations against the agent (100+ tests passing at the end of the
+challenge).
+
+**The difficult parts (the honest bits).**
+
+*Getting the agent to never make up a hospital.* The first version would
+happily invent a plausible-sounding "महात्मा गांधी अस्पताल" for a village that
+had none. Fix: the tool now returns structured `status` / `source` /
+`data_as_of` and the prompt makes the agent state the source and recency out
+loud; when nothing is reachable it says so instead of fabricating.
+Hallucination isn't just an LLM problem — it's a tool-design and
+prompt-engineering problem.
+
+*Multilingual turn detection.* A health call is full of mid-sentence pauses,
+and the agent needs to know when the caller is done without cutting them off.
+`preemptive_generation` plus the `MultilingualModel()` turn detector (from
+`livekit.plugins.turn_detector.multilingual`) fixed the "replies over the
+caller" problem. Small import gotcha: it is not exposed on
+`livekit.plugins.turn_detector` directly.
+
+*Caller identity was a timing problem.* Right after `ctx.connect()`, the
+participant list can be empty, so the agent could resolve the caller to
+"anonymous" and lose the memory hook. Fix: `resolve_caller_id()` waits briefly
+for the caller to appear before falling back. Relatedly, `RunContext.userdata`
+raises `ValueError` when unset, so every memory tool wraps it in try/except —
+worth knowing before it bites you.
+
+*The SIP outbound setup is fiddly.* The LiveKit trunk editor only accepts
+E.164 numbers, so I used the wildcard (`numbers=["*"]`) and set
+`SIP_FROM_NUMBER` per call. Linphone (my free SIP softphone for testing) also
+needs "Media encryption mandatory" turned off — that alone cost me a session of
+silent calls.
+
+*Keeping analytics private.* The tempting shortcut is to log the conversation.
+Instead, the recording hook only extracts counts, tool names, and timings from
+the session history and hashes identifiers. The dashboard is safe to show
+publicly because nothing private ever reaches the database.
+
+**Build your own — a practical starting point.** You can run this exact agent
+from the repo:
+
+```text
+https://github.com/amajali-784/voice-for-bharat-challenge-2026
 ```
 
----
+The four components you'll always need:
 
-## Quickstart
+1. **Speech-to-text** — here Deepgram `nova-3` in multilingual mode
+   (`language="multi"`) so Hindi, Hinglish, and English are all understood.
+2. **An LLM** — here Google Gemini (`gemini-3.5-flash-lite`) with a strong
+   system prompt; your whole persona and guardrails live there.
+3. **Text-to-speech** — here Murf Falcon
+   (`murf.TTS(voice="hi-IN-anisha", style="Conversational", ...)`). Pick any of
+   150+ voices from the Murf Voice Library.
+4. **Real-time transport** — LiveKit Agents connects it all and handles rooms,
+   VAD, and turn detection.
 
-### Prerequisites
-
-- **Python** 3.10+
-- **[uv](https://docs.astral.sh/uv/)** — fast Python package manager
-  ```bash
-  # macOS/Linux
-  curl -LsSf https://astral.sh/uv/install.sh | sh
-  # Windows (PowerShell)
-  powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-  ```
-- **Node.js** 18+
-- **pnpm**
-  ```bash
-  npm install -g pnpm
-  ```
-- A [LiveKit](https://cloud.livekit.io/) project (free tier available)
-
-### Step 1: Clone your fork
+Setup (summary of the repo README):
 
 ```bash
-git clone https://github.com/YOUR-USERNAME/voice-for-bharat-challenge-2026.git
-cd voice-for-bharat-challenge-2026
-```
-
-### Step 2: Set up environment variables
-
-Create `.env.local` in both `backend/` and `frontend/` (copy from `.env.example` in each). You need:
-
-| Variable                               | Where to get it                                        | Required |
-| --------------------------------------- | -------------------------------------------------------- | -------- |
-| `LIVEKIT_URL`                          | LiveKit Cloud dashboard — your project's real WS URL     | Yes      |
-| `LIVEKIT_API_KEY`                      | LiveKit Cloud dashboard                                  | Yes      |
-| `LIVEKIT_API_SECRET`                   | LiveKit Cloud dashboard                                  | Yes      |
-| `MURF_API_KEY`                         | [murf.ai/api/dashboard](https://murf.ai/api/dashboard)   | Yes      |
-| `DEEPGRAM_API_KEY`                     | [deepgram.com](https://deepgram.com)                     | Yes      |
-| `GOOGLE_API_KEY` (or `OPENAI_API_KEY`) | Google AI Studio (Gemini is the default LLM here)         | Yes      |
-| `MEMORY_API_PORT` / `MEMORY_API_HOST`  | Optional — admin API port/host (default `8700`, `127.0.0.1`) | No |
-| `NEXT_PUBLIC_MEMORY_API_URL`           | Frontend only — admin API base URL (default `http://localhost:8700`) | No |
-| `ESCALATION_API_PORT` / `ESCALATION_API_HOST` | Optional — human-help API port/host (default `8701`, `127.0.0.1`) | No |
-| `NEXT_PUBLIC_ESCALATION_API_URL`       | Frontend only — human-help API base URL (default `http://localhost:8701`) | No |
-| `ANALYTICS_API_PORT` / `ANALYTICS_API_HOST` | Optional — analytics API port/host (default `8702`, `127.0.0.1`) | No |
-| `NEXT_PUBLIC_ANALYTICS_API_URL`        | Frontend only — analytics API base URL (default `http://localhost:8702`) | No |
-| `LIVEKIT_SIP_OUTBOUND_TRUNK_ID`        | LiveKit Cloud → SIP Trunks (Linphone: `sip.linphone.org`, TLS) — Day 6 | Only for outbound |
-| `LINPHONE_DOMAIN`                      | SIP server for bare-username dialing (default `sip.linphone.org`, Day 6) | Only for outbound |
-
-> ⚠️ `LIVEKIT_URL` must be your **actual** project URL (e.g. `wss://my-app-ab12cd34.livekit.cloud`), not the `your-project.livekit.cloud` placeholder from `.env.example`.
-
-### Step 3: Install backend dependencies
-
-```bash
+# backend
 cd backend
-uv sync
-uv run python src/agent.py download-files
-```
+uv sync                                   # Python 3.10+, uv package manager
+uv run python src/agent.py download-files # first time only (VAD model)
+uv run python src/agent.py dev            # run the agent
 
-### Step 4: Install frontend dependencies
-
-```bash
+# frontend (separate terminal)
 cd frontend
 pnpm install
+pnpm dev                                  # http://localhost:3000
 ```
 
-### Step 5: Run it
+**Where to put API keys without exposing them.** Copy `backend/.env.example` →
+`backend/.env.local` and `frontend/.env.example` → `frontend/.env.local`, and
+fill in `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`,
+`MURF_API_KEY`, `DEEPGRAM_API_KEY`, and `GOOGLE_API_KEY`. Both files are
+gitignored, so the keys never reach the repo. Do not hardcode keys in code.
 
-**Option A — All-in-one (from repo root):**
+**To test the agent.** Open http://localhost:3000, click
+**बातचीत शुरू करें** (Start talking), allow the microphone, and speak in Hindi —
+the agent replies with Murf Falcon's Anisha voice. Or try the terminal-only
+mode:
 
 ```bash
-# macOS/Linux
-chmod +x start_app.sh
-./start_app.sh
-
-# Windows (PowerShell)
-.\start_app.ps1
+uv run python src/agent.py console
 ```
 
-**Option B — Separate terminals:**
+Optional admin APIs (each is a separate tiny server):
 
 ```bash
-# Terminal 1 — LiveKit Server
-livekit-server --dev
-
-# Terminal 2 — Backend agent
-cd backend && uv run python src/agent.py dev
-
-# Terminal 3 — Memory admin API (optional, powers the /admin page)
-cd backend && uv run python src/memory_api.py
-
-# Terminal 3b — Escalation admin API (optional, powers the /escalations page)
-cd backend && uv run python src/escalation_api.py
-
-# Terminal 3c — Analytics admin API (optional, powers the /analytics page)
-cd backend && uv run python src/analytics_api.py
-
-# Terminal 4 — Frontend
-cd frontend && pnpm dev
+uv run python src/memory_api.py       # :8700 — powers /admin page
+uv run python src/escalation_api.py   # :8701 — powers /escalations dashboard
+uv run python src/analytics_api.py    # :8702 — powers /analytics dashboard
 ```
 
-Then open **http://localhost:3000**. Click **बातचीत शुरू करें** (Start talking), allow microphone access, and speak in Hindi — the agent replies with Murf Falcon TTS. Visit **http://localhost:3000/admin** to see which callers the agent remembers, and use the **Forget** button to erase a caller's record.
+**What I'd improve next.**
 
----
+- A real deployment. It runs locally today; the next step is a hosted agent
+  worker plus a phone number via a SIP provider so it can serve a real community.
+- More Indian languages. The voice and STT support them; the hard part is
+  localising the facility data and the offline fallback list.
+- A feedback loop into the analytics. Today the dashboard tells me whether a
+  call succeeded; I'd like it to tell me why not at a per-utterance level so I
+  can retrain the prompt on real failures.
+- A human in the loop for escalations. Right now requests land in a dashboard;
+  next, notify an actual health worker via SMS.
 
-## Day 6 — Outbound calls: the agent dials *you*
+**Links.**
 
-The health assistant stops waiting for calls and starts placing them. Health
-Access use case: a **medication / vaccination reminder** and a gentle follow-up
-on how the person is doing, chained to the Day 4 caller memory and the Day 5
-facility lookup.
+- Repository: https://github.com/amajali-784/voice-for-bharat-challenge-2026
+- Murf Falcon (fastest TTS API): https://murf.ai/api/docs/text-to-speech/streaming
+- Murf Voice Library: https://murf.ai/api/docs/voices-styles/voice-library
+- LiveKit Agents docs: https://docs.livekit.io/agents
+- Challenge: 10 Days of Voice Agents — VoiceForBharat Edition
 
-```
-dial.py --to sunita
-  → LiveKit: create room + dispatch (sip:sunita@sip.linphone.org + reminder metadata)
-    → health-reminder-agent worker (backend/src/telephony/outbound/)
-      → session.start() (models warm up while it rings)
-        → create_sip_participant (LiveKit outbound trunk → sip.linphone.org, TLS)
-          → Linphone app rings → you answer
-            → agent speaks the opening (who / why / opt-out)
-              → reminder conversation → opt_out or end_call
-```
-
-- **`backend/src/telephony/outbound/agent.py`** — the outbound worker.
-  `HealthReminderAgent` reuses the Day 4 `Assistant` (memory + facility tools)
-  and adds three tools: `opt_out` (records "never call again" in memory),
-  `end_call` (polite hang-up), `detected_voicemail` (leave nothing, don't retry).
-  The **opening is spoken deterministically** — who is calling, why, and how to
-  stop the calls — so it can never be skipped by the LLM.
-- **`backend/src/telephony/outbound/dial.py`** — the trigger: a CLI that creates
-  a room and dispatches the worker with the SIP address + reminder metadata.
-- **`backend/src/telephony/outbound/outcome.py`** — maps SIP call status to an
-  outcome (`answered`, `no_answer`, `busy`, `declined`, `voicemail`,
-  `opted_out`, …), applies the retry rule (no_answer/busy/trunk_failure retried
-  once after 10 min), and appends a JSON line per attempt to
-  `backend/logs/outcomes.jsonl`.
-- **Setup:** free **Linphone** account (`sip:<username>@sip.linphone.org`) →
-  install the Linphone app (turn **Media encryption mandatory** OFF) → create a
-  **LiveKit outbound trunk** with `address=sip.linphone.org`,
-  `transport=SIP_TRANSPORT_TLS`, `numbers=["*"]` (the editor only accepts E.164
-  numbers, so use the wildcard and set `SIP_FROM_NUMBER` per call).
-  Full steps in `backend/src/telephony/outbound/README.md`.
-
-### Run an outbound call
-
-```bash
-cd backend
-uv run python src/telephony/outbound/agent.py dev        # Terminal 1 — worker
-uv run python src/telephony/outbound/dial.py --to sunita # Terminal 2 — dial your Linphone account
-```
-
-Requires `LIVEKIT_SIP_OUTBOUND_TRUNK_ID` (+ optional `LINPHONE_DOMAIN`,
-`SIP_FROM_NUMBER` caller ID, `SIP_RINGING_TIMEOUT`) in `backend/.env.local`.
-
----
-
-## Day 7 — Know when to ask a human for help
-
-The agent stops trying to solve everything alone. For the Health Access track it
-files a **human-help request** in exactly two situations: a **red-flag symptom**
-(chest pain, trouble breathing, fainting, heavy bleeding, stroke-like weakness,
-a dangerously drowsy child, self-harm thoughts) and a **diagnosis request**
-("what disease do I have?"). It asks the caller's **permission first**, stores a
-**short, sanitised summary** (no phone numbers / OTPs / PINs / account numbers),
-gives the caller a **reference ID** (`ESC-XXXXXX`) and an honest next step, and
-**never duplicates** an already-open request.
-
-- **`backend/src/escalation.py`** — `EscalationStore` (SQLite, WAL). Each request
-  keeps: who (caller name + id), what happened, what the agent already checked,
-  urgency (`low`/`medium`/`high`/`emergency`), the caller's language and preferred
-  follow-up, and a status (`open` → `in_progress` → `resolved`). `sanitize_summary()`
-  scrubs private digit runs and secret words as a second line of defence.
-- **Agent tool `create_escalation`** — a `@function_tool` on `Assistant` in `agent.py`,
-  gated on `caller_consent=True`. The `ESCALATION` section of the system prompt
-  tells the agent when to offer it, that it must ask permission, and to keep the
-  summary short and private.
-- **`backend/src/escalation_api.py`** — stdlib admin API on **`127.0.0.1:8701`**
-  (`GET /escalations`, `PATCH /escalations/<ref>` to move status) powering the
-  **`/escalations`** dashboard page in the frontend.
-- **Dashboard** — `frontend/app/escalations/page.tsx` lists open requests
-  (emergency first), shows urgency badges and status, and lets a worker mark a
-  request `in_progress` / `resolved`.
-
-```bash
-cd backend
-uv run python src/agent.py dev        # Terminal 1 — agent
-uv run python src/escalation_api.py    # Terminal 2 — dashboard API
-cd ../frontend && pnpm dev             # Terminal 3 — UI (open /escalations)
-```
-
-Try: *"मेरे सीने में दर्द है और साँस लेने में तकलीफ़ है"* → agent says go to
-hospital / call 108, asks permission, files the request, reads back the reference
-ID. Say *"नहीं"* and nothing is filed. Ask *"मुझे कौन-सी बीमारी है?"* for the
-diagnosis-request path. A routine *"हल्का बुखार है"* call never escalates.
-
----
-
-## Day 8 — Call analytics dashboard
-
-Every call's outcome is recorded into an anonymised SQLite store and shown on a
-live dashboard at **`/analytics`** — total / successful / failed calls, success
-rate, per-channel breakdown, failure reasons, a daily trend chart, and recent
-calls. The numbers come from **real calls**, never hardcoded.
-
-**Success definition (Health Access):** a call is successful when the caller
-received safe guidance or an appropriate escalation — i.e. a human-help request
-was filed (`create_escalation` returned `created: true`), facility guidance was
-delivered (`find_nearby_health_facilities` returned `status: "ok"`), the
-caller's health situation was captured with a real exchange (`save_caller_info`
-+ turns), or a completed 30s+ two-way consultation happened. Everything else is
-**failed**, grouped by failure type (`no_response`, `user_hangup`,
-`incomplete`, `tool_error`, `sip_*`).
-
-- **`backend/src/analytics.py`** — `CallRecordStore` (SQLite, WAL). `classify_call()`
-  applies the success definition, `extract_call_signals()` reads only counts /
-  tool names / latency from a session history, `privacy_id()` hashes caller
-  identifiers (SHA-256), and `summary()` / `daily()` / `latency_trend()` /
-  `recent()` feed the dashboard. **No transcripts, names, phones, OTPs or
-  medical details are ever stored.**
-- **Recording hooks** — the inbound `entrypoint` in `agent.py` records every
-  browser call via a shutdown callback; the outbound SIP worker
-  (`telephony/outbound/agent.py`) records dial failures separately and marks
-  voicemail / opt-out / completed-reminder outcomes.
-- **`backend/src/analytics_api.py`** — stdlib admin API on **`127.0.0.1:8702`**
-  (`GET /analytics`, `/analytics/calls`, `/analytics/summary`,
-  `/analytics/daily`, `/healthz`) powering the dashboard.
-- **Dashboard** — `frontend/app/analytics/page.tsx` with a live auto-refresh
-  toggle (5 s), reachable from the header.
-
-```bash
-cd backend
-uv run python src/agent.py dev        # Terminal 1 — agent
-uv run python src/analytics_api.py     # Terminal 2 — dashboard API
-cd ../frontend && pnpm dev             # Terminal 3 — UI (open /analytics)
-```
-
-Talk to the agent (e.g. *"मेरा नाम सुनीता है, दिल्ली से हूँ, हल्का बुखार और खाँसी है"*),
-then open **http://localhost:3000/analytics** and watch the total / successful
-counters go up. Full walkthrough + video script in [`Day8.md`](./Day8.md).
-
----
-
-## Day 5 — A real tool: nearby health-facility lookup
-
-The agent can now answer "हमारे यहाँ नज़दीकी अस्पताल कहाँ है?" with **real data**
-instead of only a generic "ask your ASHA worker".
-
-- **`backend/src/facilities.py`** — the lookup engine. `lookup_health_facilities(location, facility_type)`
-  returns the closest few facilities (name, type, distance, address, phone when known).
-- **Agent tool `find_nearby_health_facilities`** — a `@function_tool` on `Assistant` in `agent.py`.
-  The LLM decides when to call it from the tool description + a `TOOLS` section in the system prompt.
-- **Chained with Day 4 memory** — if a returning caller asks for a nearby hospital, the agent uses
-  their *saved* village/district from `lookup_caller` instead of asking again.
-
-### Live vs. local data (read this)
-
-1. **Live (default): OpenStreetMap.** The place name is geocoded with **Nominatim**
-   (`countrycodes=in`) and nearby facilities are pulled from the **Overpass API**.
-   Free, keyless, and current — the result is tagged `source="live"` with a
-   `data_as_of` timestamp, and the agent says so out loud ("यह अभी की जानकारी है,
-   OpenStreetMap से"). Several public Overpass mirrors are tried in order.
-2. **Local fallback:** a small **hand-built curated list** in `LOCAL_FACILITIES`
-   (well-known public hospitals for ~15 major districts, `source="local"`). Used only
-   when the network is down or a place can't be geocoded. It is **not exhaustive**
-   and the agent says it is reading from its saved offline list.
-3. **Failure path:** if neither source works, the tool returns `status="unavailable"`
-   (explicitly *no* facilities invented) and the agent speaks a graceful line —
-   "अभी नज़दीकी सुविधाओं की जानकारी मिल नहीं पा रही है" — then suggests ASHA / PHC / 108.
-   The agent never goes silent and never hallucinates a hospital name, distance or phone.
-
-### Data recency
-
-Every result carries `source` ("live" | "local" | "none") and `data_as_of` (ISO timestamp),
-and the system prompt instructs the agent to state when the data is from ("अभी", "आज", "कल").
-"Yesterday's rate and today's rate are different decisions" — same rule here for facility info.
-
-### Demoing the failure path (for your video)
-
-Set either env var to an unreachable URL before starting the agent, and the live path
-cannot connect:
-
-```bash
-# backend/.env.local
-FACILITIES_NOMINATIM_URL=http://127.0.0.1:9/nominatim
-# or: FACILITIES_OVERPASS_URL=http://127.0.0.1:9/overpass
-```
-
-The agent then speaks the local-list answer for covered districts and the graceful
-unavailable message otherwise. `FACILITIES_OVERPASS_URLS` (comma-separated) overrides
-the Overpass mirror list.
-
-### Ask the agent something that fires the tool
-
-> "मुझे अपने पास का सरकारी अस्पताल बताइए" — with a saved location from a previous call,
-> the agent answers from memory-mined location without asking where you live.
-
----
-
-## Day 4 — Persistent caller memory
-
-
-
-The agent remembers callers across calls so a returning patient doesn't repeat their story. On the first visit the frontend mints a `caller_id` cookie (1 year) and passes it as the LiveKit participant identity; on every call the backend resolves that identity and greets returning callers by name.
-
-- **`backend/src/memory.py`** — a small SQLite `CallerStore` (WAL mode) storing caller name, language, gender, DOB, location, phone, conditions, medications, allergies, and free-form notes. It supports `upsert` (partial merge, so saving one field never wipes others), `get`, `delete`, `list`, and `count`. The DB file lives at the repo root as `caller_memory.db` (gitignored).
-- **Agent tools** (`backend/src/agent.py`) — the LLM gets four `@function_tool`s:
-  - `lookup_caller` — fetch what's known before answering;
-  - `save_caller_info` — record facts a caller shares;
-  - `add_note` — append a free-form note;
-  - `forget_caller` — erase the caller on request ("भूल जाइए / forget me").
-- **Admin API** (`backend/src/memory_api.py`) — a stdlib HTTP server (`GET /callers`, `DELETE /callers/<id>`) with CORS, default `127.0.0.1:8700`.
-- **Admin page** (`frontend/app/admin/page.tsx`) — lists every remembered caller with their details and a **Forget** button. Read-only unless you also run the memory API.
-
----
-
-## Configuration in this fork
-
-### Murf voice
-
-Set in `backend/src/agent.py`, inside the `tts=murf.TTS(...)` call:
-
-```python
-tts=murf.TTS(
-    voice="hi-IN-anisha",
-    style="Conversational",
-    tokenizer=SentenceTokenizer(min_sentence_len=2),
-    text_pacing=True,
-)
-```
-
-Anisha speaks Hindi plus English and 12 other Indian languages, so the same voice can answer in the caller's own register. Browse all voices in the [Murf Voice Library](https://murf.ai/api/docs/voices-styles/voice-library).
-
-### STT provider
-
-`AgentSession(stt=deepgram.STT(model="nova-3", language="multi"))` — `nova-3` in multilingual mode so Hindi, Hinglish, and English callers are all understood.
-
-### LLM
-
-`llm=google.LLM(model="gemini-3.5-flash-lite")` — `GOOGLE_API_KEY` required.
-
-### Turn detection
-
-`turn_detection=MultilingualModel()` (from `livekit.plugins.turn_detector.multilingual`) plus `preemptive_generation=True`, so the agent replies over natural mid-speech pauses in any language.
-
-### System prompt
-
-Lives in `SYSTEM_PROMPT` near the top of `backend/src/agent.py`. It instructs the agent to stay in simple Hindi (or the caller's language), never diagnose or prescribe, escalate to 108 / a nearby hospital for anything serious, and to use the memory tools to remember returning callers.
-
----
-
-## Latency note (Advanced/optional task)
-
-Log your own end-of-speech → first-audio-out latency here once you've run a session, e.g.:
+#10DaysofAIVoiceAgents #MurfFalcon #VoiceForBharat @Murf AI
 
 ```
-Day 1 latency (end-of-user-speech → first audio out): ___ ms
-```
 
----
+<img width="2879" height="1697" alt="image" src="https://github.com/user-attachments/assets/666a3368-acc4-44d8-a608-9507712e6559" />
 
-## Project Structure
 
-```
-voice-for-bharat-challenge-2026/
-├── backend/                 # Python voice agent (LiveKit Agents + Murf Falcon)
-│   ├── src/
-│   │   ├── agent.py         # Health Access system prompt + memory/facility tools + Anisha pipeline
-│   │   ├── memory.py        # SQLite CallerStore — persistent caller memory
-│   │   ├── facilities.py    # Day 5 — live OSM + offline health-facility lookup
-│   │   ├── memory_api.py    # Admin API (GET/DELETE callers) on :8700
-│   │   ├── escalation.py    # Day 7 — EscalationStore: human-help request queue
-│   │   ├── escalation_api.py# Day 7 — Admin API on :8701 (lists/updates requests)
-│   │   ├── analytics.py     # Day 8 — CallRecordStore: anonymised call outcomes
-│   │   ├── analytics_api.py # Day 8 — Admin API on :8702 (powers /analytics)
-│   │   └── telephony/
-│   │       └── outbound/    # Day 6 — agent.py (outbound worker), dial.py, outcome.py
-│   ├── tests/               # Pytest: memory store, tools, and agent evals
-│   ├── .env.example
-│   ├── pyproject.toml
-│   └── railway.toml
-├── frontend/                # Next.js UI, rebranded as "Swasthya Sahayak"
-│   ├── app/
-│   │   ├── page.tsx
-│   │   ├── admin/page.tsx   # Day 4 — list/forget remembered callers
-│   │   ├── escalations/page.tsx # Day 7 — human-help dashboard
-│   │   ├── analytics/page.tsx   # Day 8 — call analytics dashboard
-│   │   └── api/token/       # Mint persistent caller_id cookie (identity)
-│   ├── components/
-│   ├── app-config.ts        # Branding/title updated for Health Access
-│   ├── .env.example
-│   └── package.json
-├── start_app.sh
-├── start_app.ps1
-├── caller_memory.db         # SQLite DB, created at runtime (gitignored)
-├── README.md                # This file
-```
-
----
-
-## Links
-
-- [Murf API Docs](https://murf.ai/api/docs)
-- [Murf Voice Library](https://murf.ai/api/docs/voices-styles/voice-library)
-- [LiveKit Docs](https://docs.livekit.io)
-- [Deepgram Docs](https://developers.deepgram.com)
-- [10 Days of AI Voice Agents — #VoiceForBharat Edition](https://github.com/murf-ai/voice-for-bharat-challenge-2026)
-
----
-
-## License
-
-MIT
+<img width="2432" height="1029" alt="image" src="https://github.com/user-attachments/assets/39ab8090-023e-425c-9bad-006dce1db6ed" />
